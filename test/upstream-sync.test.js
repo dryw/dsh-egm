@@ -68,6 +68,25 @@ test('upstream.lock.json pins the upstream repository and every adapted file', (
   assert.equal(problems.length, 0, `upstream.lock.json problems:${formatList(problems)}`)
 })
 
+test('every shipped upstream runtime file is byte-identical to the lock hash', () => {
+  const problems = []
+  for (const entry of lock.files) {
+    const file = join(PACKAGE_ROOT, entry.adapted)
+    if (!isFile(file)) {
+      problems.push(`${entry.adapted}: shipped runtime file is missing`)
+      continue
+    }
+    const actual = hashUpstreamText(file)
+    if (actual !== entry.sha256) {
+      problems.push(
+        `${entry.adapted}: shipped copy no longer matches upstream ${entry.upstream} at the pinned commit ` +
+          `(expected ${entry.sha256}, got ${actual}); restore it from upstream`,
+      )
+    }
+  }
+  assert.equal(problems.length, 0, `shipped runtime file problems:${formatList(problems)}`)
+})
+
 test('every vendored upstream fixture is recorded and byte-identical to the lock hash', () => {
   const problems = []
   if (Array.isArray(lock.fixtures)) {

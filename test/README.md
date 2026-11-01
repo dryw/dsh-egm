@@ -30,7 +30,7 @@ node --test "test/plugin.test.js"
 > directory itself, so Node tries to execute it as a test file and fails with
 > `Cannot find module .../test`. Use `node --test` or the quoted glob above.
 
-The suite currently has **49 tests**. Check against another DSH runtime by setting
+The suite currently has **50 tests**. Check against another DSH runtime by setting
 `DSH_RUNTIME_VERSION` (default `0.2.1-rc.5`, the version the `engines.dsh` range is
 validated against):
 
@@ -52,7 +52,7 @@ PowerShell: `$env:DSH_RUNTIME_VERSION='0.2.2'; node --test`.
 | `test/reviewer.test.js` | The `egm_reviewer` tool starts exactly one `spawn` activation in the `egm-reviewer` preset with a depth cap of 1; it fails closed without the preset service, a `spawn` provider, or the declared preset; reviewer agents get a deny-list restriction that hides every non-read-only tool; the preset guard denies every non-allowlisted call and keeps `read`, `read_image`, `glob`, `grep` and the read-only `ops_*` readers. |
 | `test/ui-meta.test.js` | `locale/en.json` and `locale/zh.json` declare non-empty `meta.title` and `meta.description`; locale filenames are language ids; `icon.svg` is valid SVG under DSH's 256 KiB limit and is reachable through `exports "./icon"`. |
 | `test/upstream-parity.test.js` | Uses upstream EGM's own behavioural scenario suites (`test/fixtures/upstream-scenarios/`) as content tests: when the upstream skill text satisfies a required/contains pattern, the shipped `skills/<skill>/SKILL.md` must too; when upstream avoids a forbidden/not_contains pattern, the shipped text must avoid it. Each invariant is reported with scenario id, assertion, pattern and file; non-JavaScript patterns are counted and skipped, and a self-test proves the gate can fail. |
-| `test/upstream-sync.test.js` | `upstream.lock.json` agrees with the vendored-file map in `scripts/check-upstream.mjs` (26 files), every vendored file exists and is shipped by `files`, every vendored fixture is byte-identical to its recorded SHA-256, and (when `EGM_SOURCE=<checkout>` is set) the lock matches a live upstream checkout. |
+| `test/upstream-sync.test.js` | `upstream.lock.json` agrees with the vendored-file map in `scripts/check-upstream.mjs` (26 files); every shipped runtime file and every vendored fixture is byte-identical to its recorded SHA-256; every adapted file is shipped by `files`; the lock matches a live upstream checkout when `EGM_SOURCE=<checkout>` is set. |
 | `test/upstream-designs.test.js` | The vendored upstream design documents (`test/fixtures/upstream-designs/`) match the titles, mention counts and semantic-split (`## Detailed Implementation Plan` heading) state recorded in `corpus.json`, and the vendored review skill/template still enforce the semantic-split rule. |
 
 `test/helpers.js` holds the shared readers (frontmatter parser, file walker,
