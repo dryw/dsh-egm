@@ -1,7 +1,7 @@
 # scripts
 
-Repository tooling that is **not** shipped in the npm package (`files` excludes
-`scripts/`). Node >= 22, zero dependencies.
+Repository tooling. Node >= 22, zero dependencies. The npm package ships
+`scripts/check-upstream.mjs`: `files` lists `scripts`, and the CI pack check requires it.
 
 ## `check-upstream.mjs` — semi-automatic upstream tracking
 
@@ -38,7 +38,7 @@ node scripts/check-upstream.mjs --update-lock --source ../egm-source
 
 `.github/workflows/upstream-sync.yml` runs weekly (and on demand). It executes the
 script; on drift it opens — or comments on — the issue **"Upstream EGM changed:
-re-adapt bundled skills"** with the affected files and a checklist. A human then
+re-vendor bundled skills"** with the affected files and a checklist. A human then
 re-adapts, refreshes the vendored fixtures, runs `node --test`, refreshes the lock,
 and releases.
 

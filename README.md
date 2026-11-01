@@ -176,7 +176,7 @@ upstream at the pinned commit; `upstream.lock.json` records the commit and every
 ## Development
 
 ```sh
-node --test                            # 49 checks: manifest, vendored content, adapter, reviewer isolation, upstream parity
+node --test                            # 50 checks: manifest, vendored content, adapter, reviewer isolation, upstream parity
 node scripts/check-upstream.mjs        # reports whether upstream EGM moved since the pinned commit
 ```
 
@@ -204,7 +204,7 @@ node scripts/check-upstream.mjs --update-lock  # after refreshing the vendored f
 
 A weekly GitHub Actions workflow
 ([`.github/workflows/upstream-sync.yml`](.github/workflows/upstream-sync.yml)) runs the check and
-opens, or refreshes, an issue titled **"Upstream EGM changed: re-adapt bundled skills"**.
+opens, or refreshes, an issue titled **"Upstream EGM changed: re-vendor bundled skills"**.
 `test/upstream-parity.test.js` uses upstream's own behavioural scenario suites as content-parity
 tests, so a refresh that drops an upstream-visible requirement fails `node --test`.
 [`scripts/README.md`](scripts/README.md) has the full process.
