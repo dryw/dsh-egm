@@ -1,0 +1,53 @@
+# dsh-egm bundle patch: inserts the Elephant-Goldfish Model host plugins and the
+# read-only reviewer agent preset into a profile.
+- insert:
+    - id: egm
+      name: dsh-egm/skills-host
+    - id: egm-reviewer-tool
+      name: dsh-egm/reviewer-host
+    - id: preset-egm-reviewer
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: egm-reviewer
+        name: EGM Goldfish reviewer
+        description: Read-only fresh-context reviewer for the Elephant-Goldfish Model; it can read and search, and cannot write, run commands, ask the user, read the conversation, or delegate.
+        order: 90
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: >-
+                You are a read-only design reviewer started in a fresh context.
+                You can read and search files; you cannot write or edit files, run
+                commands, ask the user, read the orchestrating conversation, or
+                delegate work. A capability-discovery tool (ops_discover_tools) may
+                appear in your tool list; it is blocked in this context, so do not
+                call it and do not try to acquire more tools.
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+            config:
+              read: true
+              readImage: true
+              write: false
+              edit: false
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+          - id: egm-reviewer-tools
+            name: dsh-egm/reviewer-tools

@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - name: Check out the package
+        uses: actions/checkout@v4
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Run the package test suite
+        run: node --test
+
+      - name: Confirm the packed file list
+        run: |
+          npm pack --dry-run --json > pack.json
+          node - <<'NODE'
+          const { readFileSync } = require('node:fs')
+          const [pack] = JSON.parse(readFileSync('pack.json', 'utf8'))
+          const files = new Set(pack.files.map((file) => file.path))
+          const skills = [
+            'egm-bootstrap',
+            'egm-brainstorm',
+            'egm-draft',
+            'egm-drift-report',
+            'egm-resolve',
+            'egm-review',
+            'egm-review-loop',
+          ]
+          const personas = [
+            'bootstrap_orchestrator',
+            'codebase_details',
+            'comprehension',
+            'design_critic',
+            'implementation_readiness',
+            'structural',
+            'style',
+            'synthesizer',
+            'zoom_out',
+          ]
+          const required = [
+            'package.json',
+            'index.js',
+            'skills-host.js',
+            'reviewer-host.js',
+            'reviewer-tools.js',
+            'cordis.patch.yml',
+            'icon.svg',
+            'README.md',
+            'LICENSE',
+            'NOTICE',
+            'ADAPTER-NOTES.md',
+            'ADAPTATIONS.md',
+            'E2E-VERIFICATION.md',
+            'upstream.lock.json',
+            'scripts/check-upstream.mjs',
+            'resources/README.md',
+            'resources/execution_instructions.md',
+            'resources/document_standards/feature-spec-standard.md',
+            'resources/document_standards/heilmeier-standard.md',
+            'resources/document_standards/implementation-readiness-standard.md',
+            'resources/document_standards/re-implementation-standard.md',
+            'resources/document_standards/zoom-out-standard.md',
+            ...skills.map((skill) => `skills/${skill}/SKILL.md`),
+            'skills/egm-draft/references/design_doc.md',
+            'skills/egm-bootstrap/references/templates.md',
+            'skills/egm-bootstrap/references/worker-return.schema.json',
+            ...personas.map((persona) => `agents/${persona}.md`),
+          ]
+          const missing = required.filter((file) => !files.has(file))
+          const leaked = [...files].filter(
+            (file) =>
+              file.startsWith('test/') ||
+              file.startsWith('examples/') ||
+              file.startsWith('.github/'),
+          )
+          if (missing.length > 0) {
+            console.error('files missing from the npm package:', missing)
+            process.exit(1)
+          }
+          if (leaked.length > 0) {
+            console.error('development files leaked into the npm package:', leaked)
+            process.exit(1)
+          }
+          console.log(`package contents OK: ${files.size} files`)
+          NODE

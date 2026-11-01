@@ -1,0 +1,100 @@
+name: Upstream sync
+
+# Semi-automatic upstream tracking: compare google/elephant-goldfish-model's
+# current HEAD with the commit pinned in upstream.lock.json. On drift, open (or
+# refresh) an issue with the affected adapted files and a re-adaptation checklist.
+# A human still does the re-adaptation; this workflow only notices and reports.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check google/elephant-goldfish-model
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the package
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Compare upstream HEAD with upstream.lock.json
+        id: drift
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          node scripts/check-upstream.mjs --json > upstream-report.json
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -eq 2 ]; then
+            echo "::error::upstream check failed (see the step log for the API error)"
+            exit 1
+          fi
+          if [ "$status" -eq 0 ]; then
+            echo "Upstream unchanged since the pinned commit; nothing to do."
+          else
+            echo "Upstream changed; the tracking issue will be created or refreshed."
+          fi
+
+      - name: Create or refresh the tracking issue
+        if: steps.drift.outputs.status == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node - <<'NODE'
+          const { readFileSync, writeFileSync } = require('node:fs')
+          const report = JSON.parse(readFileSync('upstream-report.json', 'utf8'))
+          const title = 'Upstream EGM changed: re-vendor bundled skills'
+          const lines = []
+          lines.push(
+            `Upstream [\`${report.repository}\`](https://github.com/${report.repository}) moved from \`${report.pinnedCommit}\` ` +
+              `to \`${report.targetCommit}\` (${report.commitCount} commit(s), ${report.comparedFiles} changed file(s)).`,
+          )
+          if (report.compareUrl) lines.push('', `Compare: ${report.compareUrl}`)
+          if (report.affected.length > 0) {
+            lines.push('', '### Affected adapted files', '')
+            for (const file of report.affected) lines.push(`- [\`${file.status}\`] \`${file.upstream}\` → \`${file.adapted}\``)
+          } else {
+            lines.push('', 'No adapted upstream file changed; refresh the lock when convenient.')
+          }
+          if (report.otherChanged && report.otherChanged.length > 0) {
+            lines.push('', `Other changed upstream files (not adapted, no action required): ${report.otherChanged.length}`)
+            for (const file of report.otherChanged.slice(0, 20)) lines.push(`- \`${file}\``)
+            if (report.otherChanged.length > 20) lines.push(`- … and ${report.otherChanged.length - 20} more`)
+          }
+          lines.push(
+            '',
+            '### Re-adaptation checklist',
+            '',
+            '- [ ] Review the affected files above against the current upstream content',
+            '- [ ] Re-vendor the affected `skills/**`, `agents/**` and `resources/**` files verbatim from the new upstream commit; keep DSH harness mechanics in the integration layer only',
+            '- [ ] Refresh the vendored fixtures in `test/fixtures/upstream-scenarios/`, `test/fixtures/upstream-skills/` and `test/fixtures/upstream-designs/` from the new upstream commit',
+            '- [ ] Run `node --test` from the package root and fix any content-parity failures',
+            '- [ ] Update `upstream.lock.json` with `node scripts/check-upstream.mjs --update-lock` and commit it',
+            '- [ ] Confirm `npm pack --dry-run` still ships all runtime content, then bump the package version for a release',
+          )
+          writeFileSync('issue-body.md', lines.join('\n') + '\n')
+          NODE
+          TITLE='Upstream EGM changed: re-vendor bundled skills'
+          existing=$(gh issue list --state open --limit 100 --json number,title \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -n 1)
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file issue-body.md
+          else
+            gh issue create --title "$TITLE" --body-file issue-body.md
+          fi

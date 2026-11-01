@@ -1,0 +1,75 @@
+{
+  "name": "dsh-egm",
+  "version": "0.2.0",
+  "description": "Elephant-Goldfish Model (EGM) for DeepSeek Harness: brainstorm with a context-rich Elephant, draft a design document, and stress-test it with fresh-context Goldfish reviewers before implementation.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test",
+    "check:upstream": "node scripts/check-upstream.mjs"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./skills-host": "./skills-host.js",
+    "./reviewer-host": "./reviewer-host.js",
+    "./reviewer-tools": "./reviewer-tools.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "skills-host.js",
+    "reviewer-host.js",
+    "reviewer-tools.js",
+    "cordis.patch.yml",
+    "skills",
+    "agents",
+    "resources",
+    "index.js",
+    "locale",
+    "scripts",
+    "upstream.lock.json",
+    "icon.svg",
+    "ADAPTER-NOTES.md",
+    "E2E-VERIFICATION.md",
+    "README.md",
+    "ADAPTATIONS.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "skill",
+    "skills",
+    "egm",
+    "elephant-goldfish",
+    "spec-driven-development",
+    "design-review",
+    "goldfish",
+    "dsh-plugin",
+    "deepseek",
+    "dsh-ops-compatible",
+    "ai-agents"
+  ],
+  "license": "Apache-2.0",
+  "author": "dryw",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dryw/dsh-egm.git"
+  },
+  "homepage": "https://github.com/dryw/dsh-egm#readme",
+  "bugs": {
+    "url": "https://github.com/dryw/dsh-egm/issues"
+  },
+  "engines": {
+    "dsh": ">=0.2.1-rc.5 <0.3.0",
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
