@@ -1,6 +1,6 @@
 {
   "name": "dsh-egm",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Elephant-Goldfish Model (EGM) for DeepSeek Harness: brainstorm with a context-rich Elephant, draft a design document, and stress-test it with fresh-context Goldfish reviewers before implementation.",
   "type": "module",
   "main": "index.js",
