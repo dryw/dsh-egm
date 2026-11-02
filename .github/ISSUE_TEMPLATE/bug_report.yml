@@ -1,0 +1,73 @@
+name: Bug report
+description: Report an installation, skill, or reviewer problem
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying dsh-egm! Reports from first-time users are especially useful.
+        Please remove API keys, tokens, private project content, personal data, and sensitive logs before posting.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What went wrong?
+      description: A brief description of the problem.
+      placeholder: "The Goldfish reviewer did not start after /egm-review..."
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where did this happen?
+      options:
+        - Installation / first run
+        - Bootstrap
+        - Brainstorm
+        - Draft
+        - Goldfish review / reviewer isolation
+        - Resolve / review loop
+        - Drift report
+        - Documentation
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the skill command and the smallest safe example that reproduces the problem.
+      placeholder: |
+        1. Install dsh-egm...
+        2. Run /egm-review...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: If known, include dsh-egm, DeepSeek Harness, and Node.js versions.
+      placeholder: "dsh-egm 0.2.3; DSH 0.2.1-rc.5; Node 24"
+  - type: input
+    id: system
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11 / macOS / Ubuntu..."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs (optional, redacted)
+      description: Paste only the relevant lines; remove secrets and confidential project material.
+      render: text
