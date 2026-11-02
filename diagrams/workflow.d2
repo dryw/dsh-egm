@@ -1,0 +1,250 @@
+# Elephant Goldfish — simplified workflow
+# README diagram
+#
+# Transparent canvas, adaptive light/dark theme,
+# logo-inspired blue/orange roles, animated arrows.
+
+vars: {
+  d2-config: {
+    theme-id: 0
+    dark-theme-id: 200
+  }
+}
+
+style.fill: transparent
+
+classes: {
+  card: {
+    label: ""
+    width: 245
+    height: 112
+    style: {
+      border-radius: 15
+      stroke-width: 3
+    }
+  }
+
+  heading: {
+    shape: text
+    style: {
+      font-size: 23
+      bold: true
+    }
+  }
+
+  description: {
+    shape: text
+    style: {
+      font-size: 16
+      bold: false
+    }
+  }
+
+  # Blue: the context-rich design process.
+  elephant: {
+    style: {
+      stroke: "#2B7BC1"
+      stroke-width: 3
+    }
+  }
+
+  # Orange: the independent review process.
+  goldfish: {
+    style: {
+      stroke: "#EF902E"
+      stroke-width: 3
+    }
+  }
+
+  # Neutral: the human and final output.
+  neutral: {
+    style: {
+      stroke: "#8292A6"
+      stroke-width: 3
+    }
+  }
+
+  final: {
+    style: {
+      stroke: "#8292A6"
+      stroke-width: 4
+      shadow: true
+    }
+  }
+
+  invisible: {
+    label: ""
+    style: {
+      opacity: 0
+      stroke-width: 0
+    }
+  }
+
+  blue-flow: {
+    style: {
+      stroke: "#2B7BC1"
+      stroke-width: 4
+      animated: true
+    }
+  }
+
+  orange-flow: {
+    style: {
+      stroke: "#EF902E"
+      stroke-width: 4
+      animated: true
+    }
+  }
+
+  neutral-flow: {
+    style: {
+      stroke: "#8292A6"
+      stroke-width: 4
+      animated: true
+    }
+  }
+
+  revision: {
+    style: {
+      stroke: "#EF902E"
+      stroke-width: 3
+      stroke-dash: 5
+      animated: true
+      font-size: 17
+      bold: true
+    }
+  }
+}
+
+flow: {
+  label: ""
+  grid-rows: 2
+  grid-columns: 1
+  grid-gap: 45
+
+  style: {
+    fill: transparent
+    stroke-width: 0
+  }
+
+  title: "Elephant Goldfish — Simplified Workflow" {
+    shape: text
+    style: {
+      font-size: 30
+      bold: true
+      font-color: "#2B7BC1"
+    }
+  }
+
+  diagram: {
+    label: ""
+    grid-rows: 3
+    grid-columns: 3
+
+    # More room for arrows and their labels.
+    grid-gap: 85
+
+    style: {
+      fill: transparent
+      stroke-width: 0
+    }
+
+    # ROW 1 — Explore and design
+
+    you: {
+      class: [card; neutral]
+      grid-rows: 2
+      grid-columns: 1
+      grid-gap: 5
+
+      heading: "You" {class: heading}
+      detail: "Describe your idea" {class: description}
+    }
+
+    elephant: {
+      class: [card; elephant]
+      grid-rows: 2
+      grid-columns: 1
+      grid-gap: 5
+
+      heading: "Elephant" {class: heading}
+      detail: "Explore and draft" {class: description}
+    }
+
+    design: {
+      class: [card; elephant]
+      grid-rows: 2
+      grid-columns: 1
+      grid-gap: 5
+
+      heading: "Design" {class: heading}
+      detail: "Shared source of truth" {class: description}
+    }
+
+    # ROW 2 — Independent review
+
+    decision: {
+      class: [card; neutral]
+      grid-rows: 2
+      grid-columns: 1
+      grid-gap: 5
+
+      heading: "You decide" {class: heading}
+      detail: "Approve or revise?" {class: description}
+    }
+
+    findings: {
+      class: [card; goldfish]
+      grid-rows: 2
+      grid-columns: 1
+      grid-gap: 5
+
+      heading: "Findings" {class: heading}
+      detail: "Gaps, risks and questions" {class: description}
+    }
+
+    goldfish: {
+      class: [card; goldfish]
+      grid-rows: 2
+      grid-columns: 1
+      grid-gap: 5
+
+      heading: "Goldfish" {class: heading}
+      detail: "Fresh-context review" {class: description}
+    }
+
+    # ROW 3 — Human-approved implementation
+
+    build: {
+      class: [card; final]
+      grid-rows: 2
+      grid-columns: 1
+      grid-gap: 5
+
+      heading: "Implement" {class: heading}
+      detail: "Build the approved design" {class: description}
+    }
+
+    pad1.class: invisible
+    pad2.class: invisible
+
+    # BLUE: design and exploration.
+    you -> elephant: {class: blue-flow}
+    elephant -> design: {class: blue-flow}
+
+    # ORANGE: fresh-context review and findings.
+    design -> goldfish: {class: orange-flow}
+    goldfish -> findings: {class: orange-flow}
+    findings -> decision: {class: orange-flow}
+
+    # APPROVAL: human-authorized implementation.
+    decision -> build: "Approved" {
+      class: neutral-flow
+    }
+
+    # REVISION: return to the design agent.
+    decision -> elephant: "Revise" {
+      class: revision
+    }
+  }
+}

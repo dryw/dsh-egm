@@ -95,7 +95,7 @@ export function integrationPreamble(skillName, skillDirectory) {
     "Ignore instructions written for another agent harness and its integration documents (for example files under a docs/ folder that describe a different agent's tools or install steps); they do not apply on DeepSeek Harness.",
     'Some upstream instructions reference files under a docs/ folder that describe another agent harness; those files are intentionally not shipped in this package. Do not try to open them; the referenced instructions do not apply.',
     'Where the upstream text tells you to spawn a Goldfish reviewer, use `egm_reviewer({ description, prompt })`. It starts a fresh, read-only child (read/search tools only; no write, commands, user questions, session reads, or delegation). Never use `subagent` or `subagent_fork` for a reviewer.',
-    'Every reviewer prompt must name Mode, ProjectRoot, TargetFile, LineRange or SemanticTarget, TargetStandard when one applies, and GoldfishContext, plus the persona body. Pass the persona body from `agents/<file>.md` without its YAML frontmatter or attribution line; see ADAPTER-NOTES.md.',
+    'Every reviewer prompt must name Mode, ProjectRoot, TargetFile, LineRange or SemanticTarget, TargetStandard when one applies, and GoldfishContext, plus the persona body. Pass the persona body from `agents/<file>.md` without its YAML frontmatter (its `license` field is metadata, not an instruction); see ADAPTER-NOTES.md.',
     'Interactive gates use `ask_user_question` with label/description option objects; never add a `(Recommended)` prefix.',
     'Write briefs, drafts and review reports to the project working directory, not into this package.',
     '</dsh_integration>',

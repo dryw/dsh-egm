@@ -67,7 +67,7 @@ prose: [README.md](./README.md), [ADAPTATIONS.md](./ADAPTATIONS.md),
 - `package.json` — package manifest: the `exports` map exposes `.` (`index.js`), `./skills-host`,
   `./reviewer-host`, `./reviewer-tools`, `./locale/*.json`, `./icon` (`icon.svg`) and
   `./package.json`, and `dsh.bundle.patch` declares `cordis.patch.yml` as the bundle patch
-  ([package.json:11-19](./package.json), [package.json:71-74](./package.json)).
+  ([package.json:11-19](./package.json), [package.json:75-79](./package.json)).
 
 **Invariants.**
 
@@ -141,13 +141,13 @@ prose: [README.md](./README.md), [ADAPTATIONS.md](./ADAPTATIONS.md),
 - **Packing contract.** `package.json` `files` is the single packing contract;
   `test/manifest.test.js` asserts that every runtime file is covered and that every listed entry
   exists, and `test/`, `examples/` and `.github/` must never leak into the published tarball
-  ([package.json:20-40](./package.json), [ci.yml:30-102](./.github/workflows/ci.yml)).
+  ([package.json:20-44](./package.json), [ci.yml:38-121](./.github/workflows/ci.yml)).
 - **Human-controlled upstream pin.** `scripts/check-upstream.mjs` reports drift (exit 0 clean,
   1 drift, 2 error) but never re-adapts content or moves the pin silently; `--update-lock` is a
   human step ([scripts/EGM.md](./scripts/EGM.md)).
 - **Plain ESM, no build.** The bundle ships plain JavaScript (`"type": "module"`, Node >= 22, an
   `engines.dsh` range) and needs no install-time build ([package.json:5-10](./package.json),
-  [package.json:67-70](./package.json)).
+  [package.json:71-74](./package.json)).
 
 ## Global Side Effects
 
@@ -162,22 +162,24 @@ prose: [README.md](./README.md), [ADAPTATIONS.md](./ADAPTATIONS.md),
   `--update-lock`, and reads git HEAD for `--update-lock --source`
   ([scripts/EGM.md](./scripts/EGM.md)).
 - **CI automation.** [.github/workflows/ci.yml](./.github/workflows/ci.yml) runs `node --test` on
-  Node 22 and 24 and then asserts the packed file list;
+  Ubuntu with Node 22 and 24 and on Windows with Node 24, then asserts the packed file list;
   [.github/workflows/upstream-sync.yml](./.github/workflows/upstream-sync.yml) runs the drift check
-  weekly (Mondays 06:00 UTC) and can open or comment on the upstream-tracking issue
-  ([ci.yml:11-28](./.github/workflows/ci.yml), [upstream-sync.yml:8-100](./.github/workflows/upstream-sync.yml)).
+  daily (06:00 UTC), opens or refreshes the upstream-tracking issue on drift, and opens or refreshes
+  a separate "Upstream sync check failed" issue when the check itself errors
+  ([ci.yml:13-37](./.github/workflows/ci.yml), [upstream-sync.yml:16-185](./.github/workflows/upstream-sync.yml)).
 - **Published files.** The npm tarball ships the vendored `skills/`, `agents/`, `resources/` and
   `locale/` trees, the adapter modules, the bundle patch, `scripts/check-upstream.mjs`, the human
   documentation and this blueprint; the test suite, `examples/` and `.github/` stay
-  repository-only ([package.json:20-40](./package.json), [ci.yml:30-102](./.github/workflows/ci.yml)).
+  repository-only ([package.json:20-44](./package.json), [ci.yml:38-121](./.github/workflows/ci.yml)).
 
 ## System Verification
 
-- Run: `node --test` from the package root ([package.json:7-10](./package.json)). The suite is ten
-  `test/*.test.js` files; its per-suite contracts are documented in [test/README.md](./test/README.md).
-- CI runs the same command on Node 22 and 24, then checks that the packed file list contains the
-  runtime files and no `test/`, `examples/` or `.github/` entries
-  ([ci.yml:11-28](./.github/workflows/ci.yml), [ci.yml:30-102](./.github/workflows/ci.yml)).
+- Run: `node --test` from the package root ([package.json:7-10](./package.json)). The suite is
+  twelve `test/*.test.js` files; its per-suite contracts are documented in
+  [test/README.md](./test/README.md).
+- CI runs the same command on Ubuntu with Node 22 and 24 and on Windows with Node 24, then checks
+  that the packed file list contains the runtime files and no `test/`, `examples/` or `.github/`
+  entries ([ci.yml:13-37](./.github/workflows/ci.yml), [ci.yml:38-121](./.github/workflows/ci.yml)).
 - Upstream drift check: `node scripts/check-upstream.mjs` (networked; exit 0 clean, 1 drift,
   2 error); the network-free `node scripts/check-upstream.mjs --help` smoke test exits 0
   ([scripts/EGM.md](./scripts/EGM.md)).

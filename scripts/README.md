@@ -28,7 +28,7 @@ node scripts/check-upstream.mjs --update-lock --source ../egm-source
 
 - `GITHUB_TOKEN` (or `GH_TOKEN`) authenticates the GitHub API calls; the anonymous
   limit is 60 requests/hour and the drift report needs two or three calls.
-- `--update-lock` is a human step: the weekly workflow only reports drift, it never
+- `--update-lock` is a human step: the daily workflow only reports drift, it never
   rewrites the lock or re-adapts content automatically. It also never moves the pin
   silently — you run it against the `--ref` you checked.
 - When upstream changed but none of the mapped files changed, the script still exits
@@ -36,11 +36,16 @@ node scripts/check-upstream.mjs --update-lock --source ../egm-source
 
 ### Semi-automatic workflow
 
-`.github/workflows/upstream-sync.yml` runs weekly (and on demand). It executes the
+`.github/workflows/upstream-sync.yml` runs daily (and on demand). It executes the
 script; on drift it opens — or comments on — the issue **"Upstream EGM changed:
 re-vendor bundled skills"** with the affected files and a checklist. A human then
 re-adapts, refreshes the vendored fixtures, runs `node --test`, refreshes the lock,
 and releases.
+
+If the check itself cannot complete (GitHub API or network error, script exit 2), the
+workflow opens — or comments on — a separate issue **"Upstream sync check failed"**
+with the captured stderr/stdout and the workflow run link, then still ends red so the
+error is visible.
 
 ### Adding a newly adapted upstream file
 

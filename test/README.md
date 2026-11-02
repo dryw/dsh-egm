@@ -30,7 +30,9 @@ node --test "test/plugin.test.js"
 > directory itself, so Node tries to execute it as a test file and fails with
 > `Cannot find module .../test`. Use `node --test` or the quoted glob above.
 
-The suite currently has **50 tests**. Check against another DSH runtime by setting
+The suite currently has **54 tests** (`node --test` also lists the two helper modules
+`test/helpers.js` and `test/upstream-fixtures.js` as file-level subtests, so its headline
+count is 56). Check against another DSH runtime by setting
 `DSH_RUNTIME_VERSION` (default `0.2.1-rc.5`, the version the `engines.dsh` range is
 validated against):
 
@@ -45,6 +47,7 @@ PowerShell: `$env:DSH_RUNTIME_VERSION='0.2.2'; node --test`.
 | Suite | Contract |
 |---|---|
 | `test/manifest.test.js` | `package.json` identity, `exports` for the entry plus `./skills-host`, `./reviewer-host`, `./reviewer-tools`, `./locale/*.json` and `./icon`; `dsh.bundle.patch` inserts this package (rows may also name shipped packages such as the agent-preset registry); `engines.dsh` admits the running DSH; `files` entries exist and cover every runtime file; the plain-JS entry imports only `node:` builtins and relative adapter modules, so no install-time build is needed. |
+| `test/engines.test.js` | `engines.node` is bounded and admits the CI-tested Node 22 and 24 majors; `engines.dsh` admits the recorded `0.2.1-rc.5` runtime, later `0.2.2` prereleases and the final `0.2.2` under DSH's `includePrerelease` policy, while refusing `0.3.0`. |
 | `test/skills.test.js` | The seven vendored `skills/<dir>/SKILL.md` files exist; YAML frontmatter parses (including upstream's folded `>-` descriptions, which the adapter folds to one line); `name` is kebab-case and equals the directory; `description` is usable and at most 500 characters after folding; `license` stays `Apache-2.0`; invocation flags are literal booleans. |
 | `test/resources.test.js` | The 19 vendored shared paths exist (upstream resources, skill-local `references/`, and `agents/*.md` personas); every `resources/...` path mentioned in skill or agent Markdown resolves against the package root; references use forward slashes; agent personas are non-empty Markdown. |
 | `test/hygiene.test.js` | The integration layer this package authors (`index.js`, `skills-host.js`, `reviewer-host.js`, `reviewer-tools.js`, the bundle patch, locale) never names another agent harness and carries no other-harness install text. Vendored upstream text is exempt: it is byte-identical to upstream and the injected preamble tells the agent which sections do not apply. |
@@ -54,6 +57,7 @@ PowerShell: `$env:DSH_RUNTIME_VERSION='0.2.2'; node --test`.
 | `test/upstream-parity.test.js` | Uses upstream EGM's own behavioural scenario suites (`test/fixtures/upstream-scenarios/`) as content tests: when the upstream skill text satisfies a required/contains pattern, the shipped `skills/<skill>/SKILL.md` must too; when upstream avoids a forbidden/not_contains pattern, the shipped text must avoid it. Each invariant is reported with scenario id, assertion, pattern and file; non-JavaScript patterns are counted and skipped, and a self-test proves the gate can fail. |
 | `test/upstream-sync.test.js` | `upstream.lock.json` agrees with the vendored-file map in `scripts/check-upstream.mjs` (26 files); every shipped runtime file and every vendored fixture is byte-identical to its recorded SHA-256; every adapted file is shipped by `files`; the lock matches a live upstream checkout when `EGM_SOURCE=<checkout>` is set. |
 | `test/upstream-designs.test.js` | The vendored upstream design documents (`test/fixtures/upstream-designs/`) match the titles, mention counts and semantic-split (`## Detailed Implementation Plan` heading) state recorded in `corpus.json`, and the vendored review skill/template still enforce the semantic-split rule. |
+| `test/integrity.test.js` | `upstream.lock.json` is verified in both directions: every git-tracked file under `skills/`, `agents/` and `resources/`, and every vendored `test/fixtures/upstream-*` artifact, has a lock entry, and every lock entry points at an existing tracked file; an unlisted vendored file fails the suite with the offender list. |
 
 `test/helpers.js` holds the shared readers (frontmatter parser, file walker,
 `files` glob matcher and a small SemVer range checker that mirrors DSH's

@@ -1,7 +1,7 @@
 /**
  * Upstream-sync consistency: `upstream.lock.json`, the vendored fixtures and the
  * adapted files must agree. This is the offline half of the semi-automatic
- * upstream tracking; `scripts/check-upstream.mjs` and the weekly workflow do the
+ * upstream tracking; `scripts/check-upstream.mjs` and the daily workflow do the
  * networked half (compare upstream HEAD against the pinned commit).
  */
 import { test } from 'node:test'

@@ -4,9 +4,9 @@
 
 `scripts/` contains exactly one source file, [`check-upstream.mjs`](check-upstream.mjs): a zero-dependency Node >= 22 program that is both a CLI and an importable ES module ([check-upstream.mjs:1-28](check-upstream.mjs)). Its job is upstream drift tracking for this package, a DeepSeek Harness port of `google/elephant-goldfish-model` (Apache-2.0). It compares the commit pinned in `upstream.lock.json` with a target upstream ref, reports which adapted files a re-adaptation must touch, and can regenerate the lock from a local checkout or from `raw.githubusercontent.com` ([check-upstream.mjs:2-21](check-upstream.mjs)).
 
-Direct execution runs the CLI; importing the module only exposes the exports listed below and performs no I/O ([check-upstream.mjs:398-418](check-upstream.mjs)). The module imports Node built-ins only ([check-upstream.mjs:29-33](check-upstream.mjs)), and `package.json` declares `"type": "module"` and Node `>=22` ([package.json:5](../package.json), [package.json:67-70](../package.json)).
+Direct execution runs the CLI; importing the module only exposes the exports listed below and performs no I/O ([check-upstream.mjs:398-418](check-upstream.mjs)). The module imports Node built-ins only ([check-upstream.mjs:29-33](check-upstream.mjs)), and `package.json` declares `"type": "module"` and Node `>=22` ([package.json:5](../package.json), [package.json:71-74](../package.json)).
 
-Packaging: `scripts/` **does** ship in the npm package. `package.json` `files` lists `scripts` ([package.json:20-40](../package.json)), and the CI pack check requires `scripts/check-upstream.mjs` in the tarball's file list ([ci.yml:30-102](../.github/workflows/ci.yml)).
+Packaging: `scripts/` **does** ship in the npm package. `package.json` `files` lists `scripts` ([package.json:20-44](../package.json)), and the CI pack check requires `scripts/check-upstream.mjs` in the tarball's file list ([ci.yml:38-121](../.github/workflows/ci.yml)).
 
 ## Interface
 
@@ -94,7 +94,7 @@ Subdirectories: none.
 
 ## Verification
 
-- Run: `node --test` from the package root ([package.json:7-10](../package.json)). CI runs the same command on Node 22 and 24 ([ci.yml:11-28](../.github/workflows/ci.yml)) and then asserts the packed file list contains `scripts/check-upstream.mjs` and no `test/`, `examples/`, or `.github/` files ([ci.yml:30-102](../.github/workflows/ci.yml)).
+- Run: `node --test` from the package root ([package.json:7-10](../package.json)). CI runs the same command on Ubuntu with Node 22 and 24 and on Windows with Node 24 ([ci.yml:13-37](../.github/workflows/ci.yml)) and then asserts the packed file list contains `scripts/check-upstream.mjs` and no `test/`, `examples/`, or `.github/` files ([ci.yml:38-121](../.github/workflows/ci.yml)).
 - `test/upstream-sync.test.js` imports this module and checks that the lock's `files` and `fixtures` arrays match `ADAPTED_FILES` and `VENDORED_FIXTURES`, and that every vendored fixture and shipped adapted file still hashes to its recorded SHA-256 ([../test/upstream-sync.test.js:13-22](../test/upstream-sync.test.js), [../test/upstream-sync.test.js:41-117](../test/upstream-sync.test.js)).
 - Optional network-free smoke test: `node scripts/check-upstream.mjs --help` prints the usage block and exits 0 ([check-upstream.mjs:329-352](check-upstream.mjs)).
 - The networked drift check and `--update-lock` (which require GitHub access or a local upstream checkout) are not part of the routine verification.

@@ -1,13 +1,19 @@
 name: Upstream sync
 
-# Semi-automatic upstream tracking: compare google/elephant-goldfish-model's
-# current HEAD with the commit pinned in upstream.lock.json. On drift, open (or
-# refresh) an issue with the affected adapted files and a re-adaptation checklist.
-# A human still does the re-adaptation; this workflow only notices and reports.
+# Semi-automatic upstream tracking: every day, compare
+# google/elephant-goldfish-model's current HEAD with the commit pinned in
+# upstream.lock.json. On drift, open (or refresh) an issue with the affected
+# adapted files and a re-adaptation checklist.
+#
+# A human still does the re-adaptation: this workflow only notices and reports.
+#
+# If the check itself fails (GitHub API/network error, script exit 2), the workflow
+# opens (or refreshes) a distinct "Upstream sync check failed" issue with the
+# failure output, then still ends red so the error is visible in the Actions tab.
 
 on:
   schedule:
-    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+    - cron: '0 6 * * *' # daily at 06:00 UTC
   workflow_dispatch:
 
 permissions:
@@ -33,26 +39,36 @@ jobs:
 
       - name: Compare upstream HEAD with upstream.lock.json
         id: drift
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Record the exit code instead of letting `set -e` end the step before the
+          # alert can be opened. 0 = up to date, 1 = drift, 2 = API/network error.
           set +e
-          node scripts/check-upstream.mjs --json > upstream-report.json
-          status=$?
+          node scripts/check-upstream.mjs --json > upstream-report.json 2> upstream-check.stderr
+          script_status=$?
           set -e
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          if [ "$status" -eq 2 ]; then
-            echo "::error::upstream check failed (see the step log for the API error)"
-            exit 1
-          fi
-          if [ "$status" -eq 0 ]; then
-            echo "Upstream unchanged since the pinned commit; nothing to do."
+          echo "script_exit=$script_status" >> "$GITHUB_OUTPUT"
+          if [ "$script_status" -eq 0 ] || [ "$script_status" -eq 1 ]; then
+            echo "status=$script_status" >> "$GITHUB_OUTPUT"
           else
+            # Normalise an unexpected crash or a missing Node to the script's
+            # documented error code (2) so the failure-issue step always fires.
+            echo "status=2" >> "$GITHUB_OUTPUT"
+            echo "::error::upstream check failed with exit code $script_status; opening or refreshing the failure issue"
+            echo '--- check-upstream.mjs stderr (also captured in upstream-check.stderr) ---'
+            cat upstream-check.stderr
+          fi
+          if [ "$script_status" -eq 0 ]; then
+            echo "Upstream unchanged since the pinned commit; nothing to do."
+          elif [ "$script_status" -eq 1 ]; then
             echo "Upstream changed; the tracking issue will be created or refreshed."
           fi
 
-      - name: Create or refresh the tracking issue
+      - name: Create or refresh the drift tracking issue
         if: steps.drift.outputs.status == '1'
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -81,11 +97,14 @@ jobs:
             '',
             '### Re-adaptation checklist',
             '',
+            'Detected by the daily scheduled upstream check (`.github/workflows/upstream-sync.yml`). ' +
+              'The workflow only reports drift — a human still re-adapts the bundled content below.',
+            '',
             '- [ ] Review the affected files above against the current upstream content',
             '- [ ] Re-vendor the affected `skills/**`, `agents/**` and `resources/**` files verbatim from the new upstream commit; keep DSH harness mechanics in the integration layer only',
             '- [ ] Refresh the vendored fixtures in `test/fixtures/upstream-scenarios/`, `test/fixtures/upstream-skills/` and `test/fixtures/upstream-designs/` from the new upstream commit',
             '- [ ] Run `node --test` from the package root and fix any content-parity failures',
-            '- [ ] Update `upstream.lock.json` with `node scripts/check-upstream.mjs --update-lock` and commit it',
+            '- [ ] Refresh `upstream.lock.json` for the new commit (run `node scripts/check-upstream.mjs` in lock-update mode; see `scripts/README.md`) and commit the result',
             '- [ ] Confirm `npm pack --dry-run` still ships all runtime content, then bump the package version for a release',
           )
           writeFileSync('issue-body.md', lines.join('\n') + '\n')
@@ -98,3 +117,67 @@ jobs:
           else
             gh issue create --title "$TITLE" --body-file issue-body.md
           fi
+
+      - name: Create or refresh the failure issue
+        if: steps.drift.outputs.status == '2'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCRIPT_EXIT: ${{ steps.drift.outputs.script_exit }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node - <<'NODE'
+          const { readFileSync, writeFileSync } = require('node:fs')
+          const read = (file) => {
+            try {
+              return readFileSync(file, 'utf8').trim()
+            } catch {
+              return ''
+            }
+          }
+          const stderr = read('upstream-check.stderr')
+          const stdout = read('upstream-report.json')
+          let pinned = 'unknown'
+          try {
+            pinned = JSON.parse(readFileSync('upstream.lock.json', 'utf8')).commit
+          } catch {}
+          const lines = [
+            `The upstream check failed at ${new Date().toISOString()} with exit code \`${process.env.SCRIPT_EXIT || 'unknown'}\`: ` +
+              'the script could not complete (GitHub API/network error or an unreadable lock file), so drift cannot be determined.',
+            '',
+            `- Workflow run: ${process.env.RUN_URL || '(unknown run URL)'}`,
+            `- Pinned commit: \`${pinned}\``,
+            '- Command: `node scripts/check-upstream.mjs --json`',
+            '',
+            '### Failure output',
+            '',
+            'Stderr (`upstream-check.stderr`):',
+            '',
+            '~~~text',
+            stderr === '' ? '(empty)' : stderr,
+            '~~~',
+            '',
+          ]
+          if (stdout !== '') {
+            lines.push('Stdout (`upstream-report.json`):', '', '~~~text', stdout, '~~~', '')
+          }
+          lines.push(
+            'The workflow stays red until a run completes cleanly. Re-run it manually to retry; close this issue once the check succeeds again.',
+          )
+          writeFileSync('issue-body.md', lines.join('\n') + '\n')
+          NODE
+          TITLE='Upstream sync check failed'
+          existing=$(gh issue list --state open --limit 100 --json number,title \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -n 1)
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file issue-body.md
+          else
+            gh issue create --title "$TITLE" --body-file issue-body.md
+          fi
+
+      - name: Fail the job after alerting
+        if: always() && steps.drift.outputs.status == '2'
+        shell: bash
+        run: |
+          echo "::error::The upstream check errored; see the 'Upstream sync check failed' issue for the captured output."
+          exit 1

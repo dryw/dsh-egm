@@ -17,8 +17,8 @@ you to follow the installed skill), the preamble is not in the file — read the
   and is therefore not read-only; a fork inherits the conversation. Both break Goldfish isolation.
 - Exception: `/egm-bootstrap` partition workers must write contract files. Start those with the
   generic `subagent` tool, and run the read-only explorer scout in the current thread.
-- A capability-discovery tool (`ops_discover_tools`) can appear because the profile's dsh-ops
-  plugin publishes it per scope. It is denied in the reviewer context; do not call it and do not try
+- A capability-discovery tool (`ops_discover_tools`) can appear when a profile includes dsh-ops,
+  which publishes it per scope. It is denied in the reviewer context; do not call it and do not try
   to acquire more tools.
 
 ## Reviewer prompt envelope (use every time)
@@ -34,13 +34,17 @@ TargetFile: <absolute path>            (REVIEW)
 LineRange: <n-m or "full file">        (REVIEW; use SemanticTarget when a section is the scope)
 TargetStandard: <absolute path or "none">
 GoldfishContext: <absolute paths of the baseline documents>
-OutputArtifact: <report filename>      (synthesizer only)
+OutputArtifact: <report filename>      (synthesis step, direct dispatch)
 ```
 
-Do not paste the persona's YAML frontmatter, the licence line, or the repository attribution line
-into the prompt: they are discovery/attribution metadata, not instructions. Do not prepend "you
-cannot see this file" scaffolding either — it is false when the child reads the persona file itself,
-which is the documented fallback.
+There is no synthesizer child on DeepSeek Harness: reviewers are read-only and capped at depth 1, so
+a reviewer cannot delegate. Run the synthesis step as direct dispatch in the current thread — start
+the reviewers with `egm_reviewer`, then write the consolidated report yourself. Do not start
+`egm-synthesizer` through `egm_reviewer` (it is read-only).
+
+Do not paste the persona's YAML frontmatter (including its `license` field) into the prompt: it is
+discovery/attribution metadata, not instructions. If you pass the persona by path instead of pasting
+it, do not tell the child it cannot open that file; it can read it.
 
 ## Interactive gates
 

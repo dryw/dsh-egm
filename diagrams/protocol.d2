@@ -1,0 +1,482 @@
+# dsh-egm — detailed development protocol
+# HOW-IT-WORKS diagram
+#
+# Blue   = Elephant-led activity
+# Orange = Goldfish-led review
+# Violet = Iteration and optional re-review
+# Neutral = Human decisions and preparation
+#
+# Transparent background; adaptive light/dark theme.
+# Animated arrows are reserved for Goldfish handoffs.
+#
+# Important:
+# - Phase 1 uses six concurrent independent Goldfish lenses.
+# - Phase 3 uses five sequential Goldfish review stages.
+# - Self-loops in Phase 1 list lenses, not execution order.
+
+vars: {
+  d2-config: {
+    theme-id: 0
+    dark-theme-id: 200
+    pad: 55
+  }
+}
+
+style.fill: transparent
+
+classes: {
+  participant: {
+    width: 185
+    height: 70
+    style: {
+      border-radius: 12
+      stroke-width: 3
+      font-size: 19
+      bold: true
+    }
+  }
+
+  blue: {
+    style.stroke: "#2B7BC1"
+  }
+
+  orange: {
+    style.stroke: "#EF902E"
+  }
+
+  neutral: {
+    style.stroke: "#8292A6"
+  }
+
+  # Phase frames with gentle shading.
+  frame: {
+    style: {
+      border-radius: 12
+      stroke-width: 2
+      font-size: 22
+      bold: true
+    }
+  }
+
+  frame-blue: {
+    style: {
+      stroke: "#2B7BC1"
+      fill: "linear-gradient(rgba(43,123,193,0.07),rgba(43,123,193,0.07))"
+    }
+  }
+
+  frame-orange: {
+    style: {
+      stroke: "#EF902E"
+      fill: "linear-gradient(rgba(239,144,46,0.07),rgba(239,144,46,0.07))"
+    }
+  }
+
+  frame-neutral: {
+    style: {
+      stroke: "#8292A6"
+      fill: "linear-gradient(rgba(130,146,166,0.06),rgba(130,146,166,0.06))"
+    }
+  }
+
+  # Violet identifies iterative work.
+  loop: {
+    style: {
+      stroke: "#A78BFA"
+      stroke-width: 3
+      stroke-dash: 5
+      fill: "linear-gradient(rgba(167,139,250,0.13),rgba(167,139,250,0.13))"
+      border-radius: 10
+      font-size: 17
+      bold: true
+    }
+  }
+
+  # Subtle explanatory notes.
+  review-note: {
+    style: {
+      stroke: "#8292A6"
+      stroke-width: 2
+      stroke-dash: 4
+      font-size: 16
+    }
+  }
+
+  # G carries the two visible notes below, so it cannot carry width/height
+  # (D2 cannot size a sequence-diagram participant that has children).
+  participant-note: {
+    style: {
+      border-radius: 12
+      stroke-width: 3
+      font-size: 19
+      bold: true
+    }
+  }
+
+  # Layout-only alignment group.
+  invisible: {
+    label: ""
+    style: {
+      fill: transparent
+      stroke-width: 0
+      opacity: 0
+    }
+  }
+
+  # Ordinary messages.
+  design-line: {
+    style: {
+      stroke: "#2B7BC1"
+      stroke-width: 3
+      font-size: 17
+    }
+  }
+
+  review-line: {
+    style: {
+      stroke: "#EF902E"
+      stroke-width: 3
+      font-size: 17
+    }
+  }
+
+  human-line: {
+    style: {
+      stroke-width: 3
+      font-size: 17
+    }
+  }
+
+  # Important handoffs animate.
+  handoff: {
+    style: {
+      stroke: "#EF902E"
+      stroke-width: 4
+      font-size: 18
+      bold: true
+      animated: true
+    }
+  }
+
+  approval: {
+    style: {
+      stroke-width: 4
+      font-size: 18
+      bold: true
+    }
+  }
+}
+
+shape: sequence_diagram
+
+# ==========================================
+# PARTICIPANTS
+# ==========================================
+
+H: "YOU\nEngineer" {
+  class: [participant; neutral]
+}
+
+E: "ELEPHANT\nDeep context" {
+  class: [participant; blue]
+}
+
+D: "DESIGN\nSource of truth" {
+  class: [participant; neutral]
+}
+
+G: "GOLDFISH\nFresh context" {
+  class: [participant-note; orange]
+}
+
+R: "REPOSITORY\nCode and tests" {
+  class: [participant; neutral]
+}
+
+# All top-level frames use the same hidden
+# H-to-R alignment message.
+#
+# This maintains consistent horizontal
+# participant coverage for phase frames.
+
+# ==========================================
+# OPTIONAL — BOOTSTRAP
+# ==========================================
+
+bootstrap: " OPTIONAL  /  Bootstrap existing project" {
+  class: [frame; frame-neutral]
+
+  aligner: {
+    class: invisible
+    H -> R: "" {style.opacity: 0}
+  }
+
+  H -> E: "/egm-bootstrap" {
+    class: human-line
+  }
+
+  E -> R: "Map existing codebase" {
+    class: design-line
+  }
+
+  E -> D: "Generate project context" {
+    class: design-line
+  }
+}
+
+# ==========================================
+# PHASE 1 — BRAINSTORM
+# ==========================================
+
+phase1: " PHASE 1  /  Explore the idea" {
+  class: [frame; frame-blue]
+
+  aligner: {
+    class: invisible
+    H -> R: "" {style.opacity: 0}
+  }
+
+  H -> E: "/egm-brainstorm" {
+    class: design-line
+  }
+
+  E -> R: "Explore architecture" {
+    class: design-line
+  }
+
+  E -> H: "Challenge assumptions" {
+    class: design-line
+  }
+
+  H -> E: "Define goals and constraints" {
+    class: human-line
+  }
+
+  E -> G: "Spawn six independent reviewers" {
+    class: handoff
+  }
+
+  # Visible note: the lenses are concurrent.
+  G."Six lenses run concurrently": {
+    class: review-note
+  }
+
+  # Six independent Goldfish brainstorming lenses.
+  # Displayed vertically for readability.
+  # These are NOT sequential review stages.
+
+  G -> G: "Contrarian / YAGNI" {
+    class: review-line
+  }
+
+  G -> G: "Cost, Quota & Token Economics" {
+    class: review-line
+  }
+
+  G -> G: "UX & Developer Ergonomics" {
+    class: review-line
+  }
+
+  G -> G: "Migration & Compatibility" {
+    class: review-line
+  }
+
+  G -> G: "Observability & SRE" {
+    class: review-line
+  }
+
+  G -> G: "Tech Debt & Maintenance" {
+    class: review-line
+  }
+
+  G -> E: "Synthesized concept critique" {
+    class: handoff
+  }
+
+  E -> D: "Save concept brief" {
+    class: design-line
+  }
+}
+
+# ==========================================
+# PHASE 2 — DRAFT SPECIFICATION
+# ==========================================
+
+phase2: " PHASE 2  /  Write the specification" {
+  class: [frame; frame-blue]
+
+  aligner: {
+    class: invisible
+    H -> R: "" {style.opacity: 0}
+  }
+
+  H -> E: "/egm-draft" {
+    class: design-line
+  }
+
+  E -> D: "Create design draft" {
+    class: design-line
+  }
+
+  sections: " ITERATE  /  Design sections" {
+    class: loop
+
+    E -> H: "Present section" {
+      class: design-line
+    }
+
+    H -> E: "Review and decide" {
+      class: human-line
+    }
+
+    E -> D: "Refine specification" {
+      class: design-line
+    }
+  }
+}
+
+# ==========================================
+# PHASE 3 — GOLDFISH REVIEW
+# ==========================================
+
+phase3: " PHASE 3  /  Challenge the design" {
+  class: [frame; frame-orange]
+
+  aligner: {
+    class: invisible
+    H -> R: "" {style.opacity: 0}
+  }
+
+  H -> E: "/egm-review" {
+    class: human-line
+  }
+
+  E -> G: "Spawn fresh reviewers" {
+    class: handoff
+  }
+
+  G -> D: "Read design and standards" {
+    class: review-line
+  }
+
+  G -> R: "Inspect scoped source" {
+    class: review-line
+  }
+
+  # Visible note: unlike Phase 1,
+  # the five review stages are sequential.
+  G."Five review stages run sequentially": {
+    class: review-note
+  }
+
+  # Stage 1
+  G -> G: "Initial Zoom Out" {
+    class: review-line
+  }
+
+  # Stage 2
+  G -> G: "Comprehension" {
+    class: review-line
+  }
+
+  # Stage 3
+  G -> G: "Design Critique" {
+    class: review-line
+  }
+
+  # Stage 4
+  G -> G: "Intermediate Zoom Out" {
+    class: review-line
+  }
+
+  # Stage 5
+  G -> G: "Implementation Readiness" {
+    class: review-line
+  }
+
+  G -> E: "Independent findings" {
+    class: handoff
+  }
+
+  E -> D: "Save review reports" {
+    class: design-line
+  }
+
+  E -> H: "Present findings" {
+    class: design-line
+  }
+}
+
+# ==========================================
+# PHASE 4 — RESOLVE AND APPROVE
+# ==========================================
+
+phase4: " PHASE 4  /  Resolve and approve" {
+  class: [frame; frame-neutral]
+
+  aligner: {
+    class: invisible
+    H -> R: "" {style.opacity: 0}
+  }
+
+  resolution: " ITERATE  /  Until design is accepted" {
+    class: loop
+
+    H -> E: "Triage findings" {
+      class: human-line
+    }
+
+    E -> D: "/egm-resolve" {
+      class: design-line
+    }
+
+    extra: " OPTIONAL  /  Independent re-review" {
+      class: loop
+
+      E -> G: "Review revised design" {
+        class: handoff
+      }
+
+      G -> E: "Updated findings" {
+        class: handoff
+      }
+    }
+  }
+
+  H -> D: "Approve final specification" {
+    class: approval
+  }
+}
+
+# ==========================================
+# PHASE 5 — IMPLEMENT AND VERIFY
+# ==========================================
+
+phase5: " PHASE 5  /  Build and verify" {
+  class: [frame; frame-blue]
+
+  aligner: {
+    class: invisible
+    H -> R: "" {style.opacity: 0}
+  }
+
+  H -> E: "Authorize implementation" {
+    class: approval
+  }
+
+  E -> D: "Follow approved design" {
+    class: design-line
+  }
+
+  E -> R: "Implement and test" {
+    class: design-line
+  }
+
+  E -> H: "Present results" {
+    class: design-line
+  }
+
+  H -> E: "Verify against specification" {
+    class: human-line
+  }
+}
