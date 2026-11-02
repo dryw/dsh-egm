@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a usability, workflow, or documentation improvement
+title: "[Idea]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve dsh-egm. Small usability problems and confusing instructions are worth reporting, too.
+        Please avoid sharing confidential designs, credentials, or private project details.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the situation and why the current workflow is difficult.
+      placeholder: "When I run my first review, I struggle to..."
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where would this help?
+      options:
+        - Installation / onboarding
+        - Brainstorm / draft
+        - Goldfish review
+        - Resolve / approval
+        - Documentation / examples
+        - Other / not sure
+  - type: textarea
+    id: improvement
+    attributes:
+      label: What would you change?
+      description: Describe a possible solution, if you have one.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What would success look like?
+      description: What should a user be able to do afterward?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or additional context (optional)

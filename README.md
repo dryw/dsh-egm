@@ -11,6 +11,7 @@
 <p align="center">
   <a href="#install">Install</a> &ensp;·&ensp;
   <a href="#quickstart">Quickstart</a> &ensp;·&ensp;
+  <a href="#feedback-and-support">Feedback</a> &ensp;·&ensp;
   <a href="#how-it-works">How it works</a> &ensp;·&ensp;
   <a href="#see-a-complete-run">Example run</a> &ensp;·&ensp;
   <a href="VERIFICATION.md">Verification</a> &ensp;·&ensp;
@@ -116,6 +117,19 @@ a delivery fails, or the same event arrives twice?
    build to the approved plan.
 
 You can use each skill on its own; you do not have to follow the full sequence.
+
+## Feedback and support
+
+Trying dsh-egm for the first time? Your experience is useful whether it worked or not.
+GitHub Issues is the place to ask for help and suggest improvements:
+
+- **Something broke or installation was confusing?** [Report a bug](https://github.com/dryw/dsh-egm/issues/new?template=bug_report.yml). Include the command or skill you ran, what happened, and your DSH/Node versions if known.
+- **Have an idea or documentation suggestion?** [Request an improvement](https://github.com/dryw/dsh-egm/issues/new?template=feature_request.yml).
+- **Want to share a first-run experience or ask a question?** [Open an issue](https://github.com/dryw/dsh-egm/issues/new/choose). A short note about what worked and what surprised you is welcome.
+
+Especially helpful: did the plugin install cleanly, did a fresh Goldfish reviewer start, and did the feedback change your design?
+
+**Before posting:** remove API keys, credentials, personal information, confidential project content, and sensitive log output. A small redacted reproduction is better than a full private design or session transcript.
 
 ## See a complete run
 
