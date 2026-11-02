@@ -56,7 +56,10 @@ review.
 
 ## Requirements
 
-- DeepSeek Harness `0.2.1-rc.5` or newer in the `0.2.x` line (`engines.dsh`).
+- DeepSeek Harness `0.2.1-rc.5` or newer in the `0.2.x` line (`engines.dsh`); the recorded
+  end-to-end run used `0.2.1-rc.5`. DSH evaluates that range with SemVer prerelease matching on.
+- Node.js 22 or 24 (CI-tested; `engines.node` is `>=22 <25`). The DSH `0.2.2` alpha line declares
+  its own `node >=24.9` requirement, so use Node 24.9+ when you run that harness line.
 - A Harness composition with the skill registry, the tools registry, the subagent service, the
   agent-presets service, and an in-process `spawn` subagent provider. The plugin installs the
   `egm-reviewer` preset and the `egm_reviewer` tool that selects it.
@@ -178,7 +181,7 @@ upstream at the pinned commit; `upstream.lock.json` records the commit and every
 ## Development
 
 ```sh
-node --test                            # 50 checks: manifest, vendored content, adapter, reviewer isolation, upstream parity
+node --test                            # 52 checks: manifest, engines, vendored content, adapter, reviewer isolation, upstream parity
 node scripts/check-upstream.mjs        # reports whether upstream EGM moved since the pinned commit
 ```
 

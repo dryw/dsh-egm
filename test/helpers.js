@@ -425,8 +425,11 @@ function comparatorPredicates(version, token) {
 }
 
 /**
- * Minimal SemVer range check with the same prerelease policy DSH uses:
- * `includePrerelease: true` (see dsh-app-boot `satisfies`).
+ * Minimal SemVer range check with the same prerelease policy DSH uses when it evaluates
+ * `engines.dsh`: `semver.satisfies(runtimeVersion, range, { includePrerelease: true })`
+ * (verified in the shipped Harness: `dsh-app-boot`'s `satisfies`). This differs from npm's
+ * default range policy, which excludes prereleases unless a comparator names the same
+ * major/minor/patch tuple; do not "align" this helper with the npm CLI default.
  */
 export function semverSatisfies(versionText, rangeText) {
   const version = parseVersion(versionText)
