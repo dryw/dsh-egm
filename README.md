@@ -17,6 +17,7 @@
 <p align="center">
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
   <a href="https://github.com/dryw/dsh-egm/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dryw/dsh-egm/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://dsh-plugin.org/plugins/dryw/dsh-egm"><img alt="Listed on dsh-plugin.org" src="https://dsh-plugin.org/badges/listed.svg"></a>
   <img alt="DeepSeek Harness 0.2.x" src="https://img.shields.io/badge/DSH-0.2.x-4c1.svg">
   <img alt="node --test" src="https://img.shields.io/badge/gate-node%20--test-brightgreen.svg">
 </p>
