@@ -288,7 +288,7 @@ restart the Harness (or toggle the plugin row) so the host plugin re-reads the b
 ## Staying in sync with upstream
 
 [`upstream.lock.json`](upstream.lock.json) pins the upstream commit
-(`a119668d7dc5d558664ba711d4671d11fb7270a8`) and the SHA-256 of every vendored file.
+(`464db031e7dd1b9a79803ac8ea45f55c7c20c5bc`) and the SHA-256 of every vendored file.
 
 [`scripts/check-upstream.mjs`](scripts/check-upstream.mjs) compares that pin with upstream's default
 branch and reports which vendored files changed:

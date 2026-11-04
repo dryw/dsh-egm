@@ -215,7 +215,7 @@ brainstorm → draft → review 流程。安装步骤和两个场景的选择命
 
 ## 与上游保持同步
 
-[`upstream.lock.json`](upstream.lock.json) 锁定上游提交（`a119668d7dc5d558664ba711d4671d11fb7270a8`）和每个内置文件的 SHA-256。
+[`upstream.lock.json`](upstream.lock.json) 锁定上游提交（`464db031e7dd1b9a79803ac8ea45f55c7c20c5bc`）和每个内置文件的 SHA-256。
 
 [`scripts/check-upstream.mjs`](scripts/check-upstream.mjs) 会把锁定的上游提交与上游的默认分支进行比较，并报告哪些内置文件发生了变化：
 

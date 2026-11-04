@@ -107,6 +107,7 @@ jobs:
             (file) =>
               file.startsWith('test/') ||
               file.startsWith('tests/') ||
+              file.startsWith('docs/testing/') ||
               file.startsWith('examples/') ||
               file.startsWith('.github/'),
           )

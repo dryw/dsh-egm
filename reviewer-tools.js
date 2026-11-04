@@ -57,8 +57,8 @@ export function hideNonReviewerTools(tools) {
  * @param {import('@deepseek-ai/cordis').Context} ctx the reviewer agent's plugin context.
  */
 export function apply(ctx) {
-  ctx.effect(() => hideNonReviewerTools(ctx.tools))
   ctx.effect(() => ctx.tools.guard((exec) => (isAllowed(exec.name)
     ? undefined
     : `EGM Goldfish reviewers are read-only: the "${exec.name}" tool is not available in this reviewer context.`)))
+  ctx.effect(() => hideNonReviewerTools(ctx.tools))
 }

@@ -254,6 +254,7 @@ test('files covers every runtime file that is not always shipped', () => {
     // not always shipped must be covered by a `files` entry.
     if (relativePath.startsWith('test/')) continue
     if (relativePath.startsWith('tests/')) continue
+    if (relativePath.startsWith('docs/testing/')) continue
     if (relativePath.startsWith('examples/')) continue
     if (relativePath.startsWith('.github/')) continue
     if (relativePath.split('/').some((segment) => segment.startsWith('.'))) continue

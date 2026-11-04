@@ -11,7 +11,7 @@
  * `reviewer-tools.js`. This module owns the model-facing spawn tool and the
  * agent-scope restriction that keeps the reviewer's visible schema read-only.
  */
-import { hideNonReviewerTools } from './reviewer-tools.js'
+import { apply as applyReviewerTools } from './reviewer-tools.js'
 
 export const name = 'dsh-egm-reviewer'
 
@@ -68,9 +68,9 @@ export function apply(ctx) {
     if (presets === undefined) return
     try {
       if (presets.composedPreset(agent.ctx) !== REVIEWER_PRESET) return
-      agent.ctx.effect(() => hideNonReviewerTools(agent.ctx.tools))
+      applyReviewerTools(agent.ctx)
     } catch (error) {
-      console.warn(`[dsh-egm] could not enforce reviewer tool isolation: ${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(`egm_reviewer isolation failed: ${error instanceof Error ? error.message : String(error)}`, { cause: error })
     }
   }))
 
@@ -94,9 +94,11 @@ export function apply(ctx) {
       const parent = exec.agent
       if (parent === undefined) throw new Error('egm_reviewer requires a calling agent')
       const declared = await ctx.get('agentPresets').list()
-      if (!declared.some((preset) => preset.id === REVIEWER_PRESET)) {
+      const preset = declared.find((preset) => preset.id === REVIEWER_PRESET)
+      if (preset === undefined) {
         throw new Error(`egm_reviewer unavailable: the "${REVIEWER_PRESET}" agent preset is not installed; reinstall dsh-egm`)
       }
+      if (preset.broken !== undefined) throw new Error(`egm_reviewer unavailable: the reviewer preset is broken: ${String(preset.broken)}`)
       if (typeof args.prompt !== 'string' || args.prompt.trim() === '') {
         throw new Error('egm_reviewer requires a non-empty prompt')
       }

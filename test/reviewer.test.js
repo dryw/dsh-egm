@@ -81,6 +81,15 @@ test('the reviewer plugin registers the egm_reviewer tool and starts preset chil
   assert.equal(spec.request.maxDepth, 1, 'a reviewer must not be able to delegate further')
   assert.deepEqual(spec.request.prompt, [{ type: 'text', text: 'You are a naive reader.' }])
   assert.deepEqual(spec.request.parent, { id: 'parent-1' })
+  const empty = createReviewerContext()
+  reviewer.apply(empty.context)
+  const prompt = 'Mode: REVIEW\nTargetFile: /fixture/design.md\nGoldfishContext: []'
+  await empty.registeredTools[0].execute({description:'empty context',prompt}, {
+    agent:{id:'private-parent', history:['PARENT_SENTINEL']}, signal:new AbortController().signal,
+  })
+  assert.deepEqual(empty.activations[0].request.prompt, [{type:'text',text:prompt}])
+  assert(!JSON.stringify(empty.activations[0].request.prompt).includes('PARENT_SENTINEL'))
+
 })
 
 test('the reviewer tool fails closed when reviewer support is missing', async () => {
@@ -88,9 +97,10 @@ test('the reviewer tool fails closed when reviewer support is missing', async ()
     { options: { withoutPresets: true }, pattern: /agent-presets service/iu },
     { options: { providers: [] }, pattern: /spawn/iu },
     { options: { presets: [{ id: 'standard' }] }, pattern: /not installed/iu },
+    { options: { presets: [{ id: 'egm-reviewer', broken: 'missing guard module' }] }, pattern: /preset is broken/iu },
   ]
   for (const { options, pattern } of cases) {
-    const { context, registeredTools } = createReviewerContext(options)
+    const { context, registeredTools, activations } = createReviewerContext(options)
     reviewer.apply(context)
     const tool = registeredTools[0]
     await assert.rejects(
@@ -98,6 +108,7 @@ test('the reviewer tool fails closed when reviewer support is missing', async ()
       pattern,
       `reviewer tool must fail closed for ${JSON.stringify(options)}`,
     )
+    assert.equal(activations.length, 0)
   }
 })
 
@@ -109,6 +120,7 @@ test('reviewer agents get every non-read tool hidden at the agent scope', () => 
       return typeof disposer === 'function' ? disposer : () => {}
     },
     tools: {
+      guard() { return () => {} },
       schemas() {
         return [
           { name: 'read' },
@@ -184,4 +196,32 @@ test('the reviewer guard hides non-read tools and denies every non-allowlisted c
   assert.match(guardFn({ name: 'session_event_read' }), /read-only/iu)
   assert.match(guardFn({ name: 'ask_user_question' }), /read-only/iu)
   assert.match(guardFn({ name: 'ops_discover_tools' }), /read-only/iu, 'the scope-local discovery selector must be denied too')
+})
+
+
+test('reviewer creation fails closed when host isolation cannot be installed', () => {
+  const { context, createdListeners } = createReviewerContext({ composedPreset: () => 'egm-reviewer' })
+  reviewer.apply(context)
+  const installed = []
+  const child = {
+    effect: fn => fn(),
+    tools: {
+      guard(fn) { installed.push(fn); return () => {} },
+      schemas() { return [{name:'write'}] },
+      restrict() { throw new Error('unsupported scope restriction') },
+    },
+  }
+  assert.throws(() => createdListeners[0]({agent:{ctx:child}}), /isolation failed.*unsupported scope restriction/)
+  assert.equal(installed.length, 1)
+  assert.match(installed[0]({name:'write'}), /read-only/)
+})
+
+test('invalid prompts and callers never start activations', async () => {
+  const {context, registeredTools, activations} = createReviewerContext()
+  reviewer.apply(context)
+  for (const prompt of ['', '   ', undefined, [], 42]) {
+    await assert.rejects(() => registeredTools[0].execute({prompt}, {agent:{id:'p'}}), /non-empty prompt/)
+  }
+  await assert.rejects(() => registeredTools[0].execute({prompt:'x'}, {}), /calling agent/)
+  assert.deepEqual(activations, [])
 })

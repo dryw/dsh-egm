@@ -2,23 +2,23 @@
   "schemaVersion": 1,
   "repository": "google/elephant-goldfish-model",
   "branch": "main",
-  "commit": "a119668d7dc5d558664ba711d4671d11fb7270a8",
-  "updatedAt": "2026-11-02T16:41:53.116Z",
+  "commit": "464db031e7dd1b9a79803ac8ea45f55c7c20c5bc",
+  "updatedAt": "2026-11-03T14:13:57.266Z",
   "files": [
     {
       "upstream": "skills/egm-bootstrap/SKILL.md",
       "adapted": "skills/egm-bootstrap/SKILL.md",
-      "sha256": "ac86aae69c782b67ebb96d1dae5bcef675745e3f57cca99196038bb5e350fc4c"
+      "sha256": "4a63ecf9db2a512f10da122b3767fdd1d501ae28d2d1db9865534557fe0f961b"
     },
     {
       "upstream": "skills/egm-brainstorm/SKILL.md",
       "adapted": "skills/egm-brainstorm/SKILL.md",
-      "sha256": "fb594315b47dca4bbea878fc77cec42a1a3ef8c75a8b903b1812260391a13ed9"
+      "sha256": "fc2adacee9d7f34cd1dac6f641bf779b06f7cc77830e5149e2b57089deed9e2f"
     },
     {
       "upstream": "skills/egm-draft/SKILL.md",
       "adapted": "skills/egm-draft/SKILL.md",
-      "sha256": "7908cb6d6b9ab82fef416211988ab9abd6681d4c783b2c31b1a8c40f97009ab0"
+      "sha256": "2c107ecd3751635df1eedef261c7e14a79e7bb9429d20753c3f0df5834e1dbec"
     },
     {
       "upstream": "skills/egm-drift-report/SKILL.md",
@@ -28,17 +28,17 @@
     {
       "upstream": "skills/egm-resolve/SKILL.md",
       "adapted": "skills/egm-resolve/SKILL.md",
-      "sha256": "6bb1909b42b815e074bd486c6244b56eef8d61669abb3302c764a16be05af472"
+      "sha256": "fe12b8712f88b51780d817e6c8f0ac5e7a29961ee111d0fd19bfc2f738d2f531"
     },
     {
       "upstream": "skills/egm-review/SKILL.md",
       "adapted": "skills/egm-review/SKILL.md",
-      "sha256": "5e96e3b586a086c7c87b4f0185303a49adc9486028134d258827e9bbfb89e986"
+      "sha256": "ae5f33afa170dfcf0b5365377df6064fd6c4490a2e8a618b8d5c8df8c1b27f21"
     },
     {
       "upstream": "skills/egm-review-loop/SKILL.md",
       "adapted": "skills/egm-review-loop/SKILL.md",
-      "sha256": "d99803ad5bf99900e9548491f6ad1ab58a9488bbf7af79f67ead033bb48b7023"
+      "sha256": "9767b7d7f5c4723549dece84514e570f1cc448b62c13b5b2341bc6db85a40c51"
     },
     {
       "upstream": "agents/bootstrap_orchestrator.md",
@@ -73,7 +73,7 @@
     {
       "upstream": "agents/style.md",
       "adapted": "agents/style.md",
-      "sha256": "9d0d59d7fac7ee479f9beea22d28b8ea20b6fea0215e06bd292a14eb2bb3b692"
+      "sha256": "9330780622baaef8dc683ea78efb3ff8e4583e3dde7ab6092b84df50e8c9ea58"
     },
     {
       "upstream": "agents/synthesizer.md",
@@ -93,12 +93,12 @@
     {
       "upstream": "resources/execution_instructions.md",
       "adapted": "resources/execution_instructions.md",
-      "sha256": "06f0ee648efa2fefd79081d01f32c4930d709fa709df42d06a287f97a8582179"
+      "sha256": "fa47f016cd8636e3b386faf402d40ac1a3dc987db5bc158cc299db4bf34492c8"
     },
     {
       "upstream": "resources/document_standards/feature-spec-standard.md",
       "adapted": "resources/document_standards/feature-spec-standard.md",
-      "sha256": "b3e4960fd884fde880a41da782fc73342fe232769e5835a4470b3c8c517644c4"
+      "sha256": "8e9821e7bfd7c074dd1cec7ba02e3ea09a3fd32e35b91a1463a37c1ee3b9d6a4"
     },
     {
       "upstream": "resources/document_standards/heilmeier-standard.md",
@@ -108,7 +108,7 @@
     {
       "upstream": "resources/document_standards/implementation-readiness-standard.md",
       "adapted": "resources/document_standards/implementation-readiness-standard.md",
-      "sha256": "ed0d2a085eac0fd9581d504a2ec0df2a92d6b2538636a22b16e0b1370fba6dbb"
+      "sha256": "49ef3a44228a14c774ec606477293be6467b232a9e4af9e031a3cad64ed87642"
     },
     {
       "upstream": "resources/document_standards/re-implementation-standard.md",
@@ -123,7 +123,7 @@
     {
       "upstream": "skills/egm-draft/references/design_doc.md",
       "adapted": "skills/egm-draft/references/design_doc.md",
-      "sha256": "eb8e580e4de6be88da33fdbe662d1b39a0fa7a13378d2dd240f82eb712684e0d"
+      "sha256": "309246562d1ffd801b3a2cd81f5cbc767d36f7530046f6ac681b6db40c6c7965"
     },
     {
       "upstream": "skills/egm-bootstrap/references/templates.md",
@@ -145,12 +145,12 @@
     {
       "upstream": "skills/egm-brainstorm/test_scenarios.yaml",
       "path": "test/fixtures/upstream-scenarios/egm-brainstorm.yaml",
-      "sha256": "b8b136dfc81ba52ffe65db79ec57da6f1214501dad9bdbe0be664cb05928177f"
+      "sha256": "3b453a415181c6e67b90250f45dc88090f3ccc43c9dfe2d3525068d67fe67838"
     },
     {
       "upstream": "skills/egm-draft/test_scenarios.yaml",
       "path": "test/fixtures/upstream-scenarios/egm-draft.yaml",
-      "sha256": "6c2ae95dfa40469169d65d20a8a16a7e2f8608f4c1a081c01b1f54b2e2ff7e1a"
+      "sha256": "6558ddf2c4567bb26ea233bcff8eb1ec704d511a9497410d4041383d28ed57b3"
     },
     {
       "upstream": "skills/egm-drift-report/test_scenarios.yaml",
@@ -165,7 +165,7 @@
     {
       "upstream": "skills/egm-review/test_scenarios.yaml",
       "path": "test/fixtures/upstream-scenarios/egm-review.yaml",
-      "sha256": "bca74669372112c5aa31c7a71e1fef76ccedd7a17169e6d3f64c2a2686dcce97"
+      "sha256": "fc9aa1b41345bcc63652304b5dd527fb79b6847651dcebca69c3ac11c37d891c"
     },
     {
       "upstream": "skills/egm-review-loop/test_scenarios.yaml",
@@ -175,17 +175,17 @@
     {
       "upstream": "skills/egm-bootstrap/SKILL.md",
       "path": "test/fixtures/upstream-skills/egm-bootstrap/SKILL.md",
-      "sha256": "ac86aae69c782b67ebb96d1dae5bcef675745e3f57cca99196038bb5e350fc4c"
+      "sha256": "4a63ecf9db2a512f10da122b3767fdd1d501ae28d2d1db9865534557fe0f961b"
     },
     {
       "upstream": "skills/egm-brainstorm/SKILL.md",
       "path": "test/fixtures/upstream-skills/egm-brainstorm/SKILL.md",
-      "sha256": "fb594315b47dca4bbea878fc77cec42a1a3ef8c75a8b903b1812260391a13ed9"
+      "sha256": "fc2adacee9d7f34cd1dac6f641bf779b06f7cc77830e5149e2b57089deed9e2f"
     },
     {
       "upstream": "skills/egm-draft/SKILL.md",
       "path": "test/fixtures/upstream-skills/egm-draft/SKILL.md",
-      "sha256": "7908cb6d6b9ab82fef416211988ab9abd6681d4c783b2c31b1a8c40f97009ab0"
+      "sha256": "2c107ecd3751635df1eedef261c7e14a79e7bb9429d20753c3f0df5834e1dbec"
     },
     {
       "upstream": "skills/egm-drift-report/SKILL.md",
@@ -195,22 +195,22 @@
     {
       "upstream": "skills/egm-resolve/SKILL.md",
       "path": "test/fixtures/upstream-skills/egm-resolve/SKILL.md",
-      "sha256": "6bb1909b42b815e074bd486c6244b56eef8d61669abb3302c764a16be05af472"
+      "sha256": "fe12b8712f88b51780d817e6c8f0ac5e7a29961ee111d0fd19bfc2f738d2f531"
     },
     {
       "upstream": "skills/egm-review/SKILL.md",
       "path": "test/fixtures/upstream-skills/egm-review/SKILL.md",
-      "sha256": "5e96e3b586a086c7c87b4f0185303a49adc9486028134d258827e9bbfb89e986"
+      "sha256": "ae5f33afa170dfcf0b5365377df6064fd6c4490a2e8a618b8d5c8df8c1b27f21"
     },
     {
       "upstream": "skills/egm-review-loop/SKILL.md",
       "path": "test/fixtures/upstream-skills/egm-review-loop/SKILL.md",
-      "sha256": "d99803ad5bf99900e9548491f6ad1ab58a9488bbf7af79f67ead033bb48b7023"
+      "sha256": "9767b7d7f5c4723549dece84514e570f1cc448b62c13b5b2341bc6db85a40c51"
     },
     {
       "upstream": "docs/designs/review.md",
       "path": "test/fixtures/upstream-designs/review.md",
-      "sha256": "d8d2b680c76073d58522db07f7ff5c54772fa259eb421395555e2187201fadf3"
+      "sha256": "75853c6e88837633ce750179b5f88a2375b32a39720ec40c103f0ac3d1af278c"
     },
     {
       "upstream": "docs/designs/draft.md",

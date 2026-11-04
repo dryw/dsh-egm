@@ -5,7 +5,7 @@ as the baseline for content parity, so `test/upstream-parity.test.js` runs offli
 and deterministically (CI has no upstream checkout):
 
 - Source: [`google/elephant-goldfish-model`](https://github.com/google/elephant-goldfish-model), Apache-2.0, Copyright Google LLC
-- Source commit: `a119668d7dc5d558664ba711d4671d11fb7270a8`
+- Source commit: `464db031e7dd1b9a79803ac8ea45f55c7c20c5bc`
 - Source paths: `skills/<skill>/SKILL.md` → `<skill>/SKILL.md`
 
 Each upstream `test_scenarios.yaml` assertion is checked against its skill's
