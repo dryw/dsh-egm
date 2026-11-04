@@ -83,7 +83,7 @@ dsh plugin --profile web add dsh-egm
 
 Restart Harness, then check **Settings → Plugins** to confirm it's enabled.
 
-The bundle declares the read-only `egm-reviewer` preset, but it does not create the host's agent-preset service. `egm_reviewer` needs a profile that composes an `agentPresets` registry resolving a valid default preset, plus an in-process `spawn` subagent provider. Harness `web` profiles compose an agent-preset registry with a `standard` default; a bare SDK profile does not. Without them `egm_reviewer` fails closed with an actionable error (`the agent-presets service is not composed` for the missing registry); the [host guide](docs/dsh.md#host-prerequisites-and-current-limit) lists the exact refusals. Package-supplied setup for a genuinely missing registry is not implemented yet, so a bare SDK profile cannot run reviews in this release.
+The bundle declares the read-only `egm-reviewer` preset, but it does not create the host's agent-preset service. `egm_reviewer` needs a profile that composes an `agentPresets` registry resolving a valid default preset, plus an in-process `spawn` subagent provider. Harness `web` profiles already compose both. For a profile without a registry (for example `headless`), the package ships an opt-in patch: add `--patch <installed package>/adapters/dsh/agent-presets.patch.yml` when starting the profile. Without a registry `egm_reviewer` fails closed (`the agent-presets service is not composed`); the [host guide](docs/dsh.md#host-prerequisites-and-current-limit) lists the exact refusals and the observed effect of applying the patch to a profile that already has a registry. The package does not compose the registry automatically.
 
 For local development, you can install from a checkout instead:
 

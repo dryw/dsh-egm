@@ -26,6 +26,9 @@ from upstream_contract import assert_upstream_artifacts, assert_upstream_child_c
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 RUNTIME = Path(os.environ.get("EGM_TEST_RUNTIME", str(HERE / "dsh-ci"))).resolve()
+# The package ships the missing host prerequisites as an opt-in patch file. Runs
+# load the installed copy, exactly as a user applies it with `dsh ... --patch`.
+AGENT_PRESETS = Path("adapters/dsh/agent-presets.patch.yml")
 MODEL = os.environ.get("DSH_EGM_MODEL")
 TARBALL = os.environ.get("DSH_EGM_TARBALL")
 LIVE = pytest.mark.skipif(os.environ.get("DSH_EGM_LIVE") != "1", reason="Set DSH_EGM_LIVE=1 for paid tests")
@@ -112,8 +115,6 @@ def profile_rows(root, provider_rows):
     return [{"id": "llm-deepseek", "disabled": True},
             {"id": "session-persistence-jsonl", "config": {"root": str(root / "sessions"), "compression": "none"}},
             {"insert": [
-                {"id": "agent-preset-registry", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-agent-preset-registry/lib/index.js"), "config": {"default": "standard"}},
-                {"id": "preset-standard", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-agent-preset/lib/index.js"), "config": {"id": "standard", "plugins": []}},
                 {"id": "live-observer", "name": str(HERE / "dsh_observer.mjs")}, *provider_rows,
             ]}]
 
@@ -168,7 +169,15 @@ def progress(method, payload, parent, labels, started):
         print(f"  [{elapsed // 60:02d}:{elapsed % 60:02d}] {line}", flush=True)
 
 
-def run_dsh(installed, root, content, provider="deepseek-official", model=None, provider_rows=None, workspace=None):
+def installed_agent_presets(plugin):
+    """Return the installed package's opt-in prerequisite patch, or fail loudly."""
+    patch = Path(plugin) / AGENT_PRESETS
+    assert patch.is_file(), f"Installed package is missing the opt-in prerequisite patch: {patch}"
+    return patch
+
+
+def run_dsh(installed, root, content, provider="deepseek-official", model=None, provider_rows=None,
+            workspace=None, agent_presets=True):
     """One SDK session. Record native evidence and always close the owned client."""
     home, plugin, tarball = installed
     workspace = workspace or root / "workspace"
@@ -182,10 +191,13 @@ def run_dsh(installed, root, content, provider="deepseek-official", model=None, 
         provider_rows = live_provider(model)
     config_path = root / "profile.patch.json"
     write_json(config_path, profile_rows(root, provider_rows))
+    patches = [str(config_path)]
+    if agent_presets:
+        patches.append(str(installed_agent_presets(plugin)))
     env = private_env(home)
     env["EGM_TEST_RECORD"] = str(root / "records.jsonl")
     config = HarnessConfig(dsh_bin=str(RUNTIME / "node_modules/.bin/dsh"), dsh_home=str(home), cwd=str(workspace),
-                           patches=(str(config_path),), env=env, initialize_timeout_seconds=30,
+                           patches=tuple(patches), env=env, initialize_timeout_seconds=30,
                            request_timeout_seconds=1200, shutdown_timeout_seconds=3)
     parent = "egm-test-" + uuid.uuid4().hex
     write_json(root / "run.json", {"parent": parent, "workspace": str(workspace), "plugin": str(plugin),
@@ -500,7 +512,8 @@ def profile(directory, tarball, source, model):
                                         "plugin": str(plugin), "dsh_home": str(home)})
     write_identity(directory, plugin, tarball, model, "tui")
     print(f"cd {directory / 'workspace'} && EGM_TEST_RECORD={directory / 'records.jsonl'} DSH_HOME={home} "
-          f"{RUNTIME / 'node_modules/.bin/dsh'} tui --patch {patch_path}")
+          f"{RUNTIME / 'node_modules/.bin/dsh'} tui --patch {patch_path} "
+          f"--patch {installed_agent_presets(plugin)}")
 
 
 def main(argv):

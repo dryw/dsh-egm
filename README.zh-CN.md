@@ -87,7 +87,7 @@ dsh plugin --profile web add dsh-egm
 
 重启 Harness，然后在 **设置 → 插件** 中确认插件已被启用。
 
-本软件包声明了只读的 `egm-reviewer` 预设，但不会创建宿主的 agent-preset 服务。`egm_reviewer` 要求 profile 组合一个能解析出有效默认预设的 `agentPresets` 注册表，以及一个进程内的 `spawn` 子 Agent 提供者。Harness 的 `web` profile 会组合注册表与默认预设；裸 SDK profile 不会。缺失时 `egm_reviewer` 会明确报错（缺少注册表时报 `the agent-presets service is not composed`）；[宿主指南](docs/dsh.md#host-prerequisites-and-current-limit) 列出了具体的拒绝行为。本版本尚未实现由软件包为真正缺失的注册表提供配置，因此裸 SDK profile 目前无法运行评审。
+本软件包声明了只读的 `egm-reviewer` 预设，但不会创建宿主的 agent-preset 服务。`egm_reviewer` 要求 profile 组合一个能解析出有效默认预设的 `agentPresets` 注册表，以及一个进程内的 `spawn` 子 Agent 提供者。Harness 的 `web` profile 已同时组合二者。对于缺少注册表的 profile（例如 `headless`），软件包提供了可选补丁：启动 profile 时追加 `--patch <已安装软件包>/adapters/dsh/agent-presets.patch.yml`。缺少注册表时 `egm_reviewer` 会明确报错（`the agent-presets service is not composed`）；[宿主指南](docs/dsh.md#host-prerequisites-and-current-limit) 列出了具体的拒绝行为，以及把补丁应用到已含注册表的 profile 时的实际观察结果。软件包不会自动组合注册表。
 
 如果是本地开发，也可以直接从本地检出目录安装：
 

@@ -6,11 +6,12 @@ requirement to the dsh-egm check that answers it, states each limit, and is the
 harness test record. Host mechanics, manifest mapping and the composed
 isolation layers live in [docs/dsh.md](docs/dsh.md).
 
-The current tree is the **uncommitted Phase C1a relocation candidate** (branch
-`restructure`, nothing committed). Acceptance is pending: no workflow,
-human-pause or upstream-support result has been re-established for this
-candidate. The Phase M figures below are kept as history; the keyless checks for
-this candidate are under "Phase C1a checkpoint".
+The current tree is the **uncommitted Phase C1b candidate** (branch
+`restructure`, nothing committed): the C1a relocation plus the opt-in host
+prerequisite patch. Acceptance is pending: no workflow, human-pause or
+upstream-support result has been re-established for this candidate. The Phase M
+and C1a figures below are kept as history; the keyless checks for this candidate
+are under "Phase C1b checkpoint".
 
 Sources at that commit: A = [`docs/designs/additional-harnesses.md`](https://github.com/google/elephant-goldfish-model/blob/113a3afc44e8f4f54722d7150d5701f65cc8ef7f/docs/designs/additional-harnesses.md)
 ("Architecture and data flow", "Validation and release gates");
@@ -54,7 +55,7 @@ runtime (a Linux-local directory under WSL). The paid tests stay skipped unless
 | 3 | Adapter tool restrictions (A) | `dsh_reviewer` test; `test_adapter` real denials | Pass |
 | 4 | No copies of shared behavior; no fork of skill text (A, H) | `dsh_upstream`: the bundled copy matches the LF-normalized `113a3af` bytes recorded in the lock, a pinned copy, not a fork; the raw archive bytes are checked by row 2. The preamble restates some upstream rules in DSH terms. Whether an external package counts is row 19 | Pass; packaging open |
 | 5 | Negative fixtures for each evidence parser (A) | Synthetic cases in [tests/unit/test_dsh_traces.py](tests/unit/test_dsh_traces.py) | Pass (keyless) |
-| 6 | Clean host profile, fixed candidate (A) | Disposable `DSH_HOME`; `DSH_EGM_TARBALL`. Limit: the replay fixtures add the `agentPresets` registry and a `standard` default preset that the bundle does not yet supply, so a bare SDK profile's `egm_reviewer` refuses until package-supplied setup exists (deferred; see "Host prerequisites and current limits") | Paid run |
+| 6 | Clean host profile, fixed candidate (A) | Disposable `DSH_HOME`; `DSH_EGM_TARBALL`. The keyless and paid runs load the installed `adapters/dsh/agent-presets.patch.yml` (opt-in, D8); no fixture-injected prerequisite rows. Limit: the patch is applied with `--patch` and the package does not compose the registry automatically, so `headless` or `sdk` need it added | Paid run |
 | 7 | Candidate SHA, checksum, host version and surface, model, date (A) | `identity.json`; the upstream pin comes from the installed package's own `upstream.lock.json` | Paid run |
 | 8 | Install, workflow, isolation recorded separately (A) | `test_install`; `test_brainstorm_draft_review`; `test_adapter` and `test_fresh_context_isolation` | Paid run |
 | 9 | Brainstorm, draft, review end to end through the install (H) | `test_brainstorm_draft_review` | Paid run |
@@ -70,22 +71,35 @@ runtime (a Linux-local directory under WSL). The paid tests stay skipped unless
 | 19 | Manifest in the upstream repo, `docs/harnesses.md` entry, transcripts in the PR (H) | Upstream decides: external package, or a manifest and adapter moved upstream ([#240](https://github.com/google/elephant-goldfish-model/issues/240)) | Open |
 | 20 | A successful read is non-error, non-empty text and does not prove the whole file was read (T) | Rule in `assert_required_reads` | Limit stated |
 | 21 | Reviewers cannot reach unrelated reports through the filesystem (A) | None: DSH guards tool names, not paths | Limit |
+| 22 | Host agent-preset prerequisites (D3/D3a, amended by D8) | Shipped opt-in `adapters/dsh/agent-presets.patch.yml`; `run_dsh` and the `profile` command load the installed file; `test_missing_agent_presets` asserts the exact fail-closed error without it. Limit: opt-in only; no automatic composition or repair | Pass (keyless); opt-in only |
 
 ## Host prerequisites and current limits
 
 `egm_reviewer` needs a profile that composes an `agentPresets` registry resolving a
 valid default preset, plus an in-process `spawn` subagent provider. The bundle
-declares the read-only `egm-reviewer` preset but does not create the registry or
-its default. Harness `web` profiles compose a registry with a `standard` default;
-a bare SDK profile does not, and the tool fails closed with an actionable error.
-The keyless replay fixtures (`tests/integration/test_dsh_live.py:profile_rows`)
-add those two rows themselves, so they are disclosed prerequisite assistance, not
-observation. The prerequisite helper and its native tests are deferred (Phase
-C1b): owner decision D3/D3a selects package-supplied setup when the registry is
-genuinely absent, but **no package-supplied prerequisite setup is implemented in
-this candidate**, so the fixture injection must not be read as the package
-supplying it. Bare SDK and arbitrary-profile workflow remains **pending**, and
-no such support is claimed.
+declares the read-only `egm-reviewer` preset but does not compose the registry or
+its default. The shipped `web` template composes a registry (`default: standard`)
+and `spawn`; the shipped `headless` and `sdk` templates compose `spawn` but no
+registry. For those, the package ships an opt-in patch,
+`adapters/dsh/agent-presets.patch.yml`, applied with the public launcher option
+`--patch <installed package>/adapters/dsh/agent-presets.patch.yml`. Profiles that
+already compose a registry need nothing; applying the patch to `web` with DSH
+0.2.1-rc.5 exits 0 but yields a second registry/preset pair with the same ids in
+the `--dump-config` composition, so it is not merged or refused.
+
+The keyless replay runs (`run_dsh` and the `profile` command in
+`tests/integration/test_dsh_live.py`) pass the **installed** copy of that file as
+an additional patch, so they load what a user loads; they no longer inject the
+registry or preset rows themselves. The observer, session-persistence and replay
+provider rows remain instrumentation, not prerequisites. The negative test
+`test_missing_agent_presets` omits the patch and asserts the exact fail-closed
+error (see [docs/dsh.md](docs/dsh.md#host-prerequisites-and-current-limit)).
+
+The package still does **not** compose the prerequisites automatically and does
+not repair an existing registry whose default is missing or invalid. Supplying
+the patch is a launcher step; bare SDK and arbitrary-profile workflow therefore
+remains **pending** unless the patch is added. This candidate makes no support
+claim for those surfaces.
 
 The test `identity.json` reads the upstream pin from the installed package's own
 lock. A hand-selected tarball therefore records its own pin instead of this
@@ -191,11 +205,11 @@ suites and tooling, and renamed this record.
   in a disposable profile produced 53 identical files, no maps, and the expected
   version and pin.
 
-### Phase C1a checkpoint (current candidate)
+### Phase C1a checkpoint (historical)
 
-Recorded on the uncommitted Phase C1a tree on 2026-11-04. These are keyless free
-checks for this relocation only. Workflow, human-pause and upstream acceptance
-remain pending.
+Recorded on the uncommitted Phase C1a tree on 2026-11-04. These are the keyless
+free checks for the relocation and are kept as history for that tree. Workflow,
+human-pause and upstream acceptance remain pending.
 
 - Node suite with `EGM_SOURCE` (Windows Node 24): **43 passed, 0 failed, 0
   skipped**, including the LF-normalized pinned-Git-object comparisons. Plain
@@ -218,6 +232,31 @@ remain pending.
   archive members equal both the lock SHA-256 and the pinned Git objects.
 - Relative links in `docs/dsh.md` and this page resolve; `git diff --check`
   clean.
+
+### Phase C1b checkpoint (current candidate)
+
+Recorded on the uncommitted Phase C1b tree on 2026-11-04. C1b adds the opt-in
+prerequisite patch (D8); the C1a relocation remains the baseline. These are
+keyless free checks only. Workflow, human-pause and upstream acceptance remain
+pending.
+
+- Node suite with `EGM_SOURCE` (Windows Node 24): **43 passed, 0 failed, 0
+  skipped**, including the LF-normalized pinned-Git-object comparisons.
+- WSL `DSH_EGM_LIVE=0 pytest tests/integration tests/unit/test_dsh_traces.py -q`
+  with the recorded Node 24 and locked runtime: **30 passed, 2 skipped** (the two
+  opt-in `@LIVE` paid tests). The added pass is `test_missing_agent_presets`,
+  which omits the shipped patch and asserts the exact fail-closed error.
+- No test injects `agent-preset-registry` or `preset-standard` rows any more;
+  `run_dsh` and the `profile` command pass the installed
+  `adapters/dsh/agent-presets.patch.yml` as an additional patch instead.
+- Candidate archive from this tree: **48 files** (47 declared plus
+  `package.json`), with the new patch packed; no `EGM.md` map, no D2 source,
+  asset README, checker or renderer packed. Installed into a disposable `sdk`
+  profile: 48/48 files identical, version `0.2.4`, pin `113a3af…`.
+- Offline raw-Git provenance: pass; all 26 lock hashes equal pinned Git objects,
+  and all 26 raw archive members equal the lock SHA-256 and the pinned Git
+  objects.
+- `git diff --check` clean.
 
 Private command logs and machine-readable results are retained with the
 checkpoint evidence for this uncommitted candidate. Acceptance remains pending

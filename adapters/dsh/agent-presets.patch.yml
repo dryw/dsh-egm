@@ -1,0 +1,21 @@
+# dsh-egm opt-in host prerequisites: inserts the minimal agent-preset registry
+# and `standard` default preset that `egm_reviewer` needs.
+#
+# Apply it with the public launcher overlay option when the target profile does
+# not compose an agent-preset registry itself, for example:
+#
+#   dsh headless --patch <installed package>/adapters/dsh/agent-presets.patch.yml
+#
+# Profiles that already compose a registry with a valid default (for example the
+# shipped `web` profile) do not need this file. The registry and preset package
+# names are resolved by the Harness like any other profile entry.
+- insert:
+    - id: agent-preset-registry
+      name: '@deepseek-ai/dsh-agent-preset-registry'
+      config:
+        default: standard
+    - id: preset-standard
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: standard
+        plugins: []

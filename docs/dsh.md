@@ -39,6 +39,18 @@ dsh plugin --profile web add dsh-egm
 dsh plugin --profile web add /path/to/dsh-egm
 ```
 
+Installation adds the skills, the reviewer preset and the `egm_reviewer` tool. If your
+profile does not already compose an agent-preset registry (the `web` template does;
+`headless` and `sdk` do not), also pass the package's opt-in prerequisite patch when you
+start the profile:
+
+```bash
+dsh headless --patch <installed package>/adapters/dsh/agent-presets.patch.yml
+```
+
+See [Host prerequisites and current limit](#host-prerequisites-and-current-limit) for what
+the file inserts and why a profile that already has a registry must not use it.
+
 All seven skills are user-invoked. The bundle starts no design or review workflow on its own:
 
 | Skill | Invoke | Use it to |
@@ -63,19 +75,46 @@ assessed.
 - an in-process `spawn` subagent provider;
 - the package-declared `egm-reviewer` preset, which this bundle adds through its patch.
 
-The bundle declares the preset but does **not** create the host registry, its default preset or the
-`spawn` provider. A Harness `web` profile composes an agent-preset registry with a `standard`
-default; a bare SDK profile does not. Without the required services the tool fails closed with an
-actionable error instead of starting a child (see [Failures and refusals](#failures-and-refusals)).
+The bundle declares the preset but does **not** compose the host registry or its default
+preset automatically. The shipped profile templates differ:
 
-**Current limit:** package-supplied setup for a genuinely missing registry is **not implemented**.
-It is deferred to a later design/review delta. In the current uncommitted Phase C1a candidate the
-only composition still comes from the profile, and the keyless replay fixtures in
-`tests/integration/test_dsh_live.py` (`profile_rows`) still inject the `agentPresets` registry and a
-minimal `standard` default themselves. That injection is disclosed functional prerequisite
-assistance, not observation. It must not be read as the package supplying the prerequisites, and
-bare SDK or arbitrary-profile workflow remains **pending**. Do not rely on this guide as evidence
-that such a profile works.
+| Shipped template | `agentPresets` registry | `spawn` provider |
+|---|---|---|
+| `web` | yes, `default: standard` | yes |
+| `headless` | no | yes |
+| `sdk` | no | yes |
+
+The `web` template therefore needs nothing. For a profile without a registry, add the
+opt-in patch file from the installed package:
+
+```bash
+dsh headless --patch <installed package>/adapters/dsh/agent-presets.patch.yml
+```
+
+The file is [`adapters/dsh/agent-presets.patch.yml`](../adapters/dsh/agent-presets.patch.yml).
+It inserts `@deepseek-ai/dsh-agent-preset-registry` with `default: standard` and a minimal
+`standard` preset whose plugin list is empty. The manifest's `dsh.bundle.patch` entry still
+loads only `cordis.patch.yml`; these prerequisites are opt-in and are never applied on
+their own.
+
+**Profiles that already compose a registry need nothing.** Do not add the patch to `web`:
+with DSH 0.2.1-rc.5, `dsh web --patch <file> --dump-config` exits 0, writes nothing to
+stderr, and the dumped composition contains a second `agent-preset-registry` and
+`preset-standard` pair with the same ids instead of merging the entries or refusing. That
+is the observed composition; this guide makes no claim about how a later DSH version
+resolves a duplicate id.
+
+Without a registry the tool stops with:
+
+```text
+egm_reviewer unavailable: the agent-presets service is not composed, so the read-only egm-reviewer preset cannot be selected
+```
+
+**Current limit:** the package supplies the prerequisites only as this opt-in file. It does
+not compose the registry automatically, does not repair an existing registry whose default
+is missing or invalid, and does not claim bare-SDK or arbitrary-profile support unless you
+add the patch. Applying the file is a launcher step you perform; the [TESTING
+record](../TESTING.md) shows how the keyless runs load the same installed file.
 
 ## Package layout and manifest mapping
 
@@ -88,7 +127,7 @@ plugin-root placeholder, `agents/...` and `resources/...` against the package ro
 | `agents/` | The nine vendored reviewer personas. |
 | `resources/` | The vendored execution instructions and document standards. |
 | `upstream.lock.json` | The pinned upstream commit and the SHA-256 of every vendored file. |
-| `adapters/dsh/` | The authored harness layer: the three host modules, the bundle patch, the icon and the locale dictionaries. |
+| `adapters/dsh/` | The authored harness layer: the three host modules, the bundle patch, the opt-in prerequisites patch, the icon and the locale dictionaries. |
 | `docs/dsh.md` | This guide. |
 | `docs/assets/` | The two README diagram SVGs; the D2 sources and the asset README are repository-only. |
 | `adapters/dsh/check_upstream.mjs`, `adapters/dsh/render_diagrams.mjs` | Repository-only tooling (upstream drift checker, diagram renderer); not packed. |
@@ -114,7 +153,10 @@ The patch
 ([`adapters/dsh/cordis.patch.yml`](../adapters/dsh/cordis.patch.yml)) inserts the two host plugins by
 their unchanged names — `dsh-egm/skills-host` and `dsh-egm/reviewer-host` — and declares the
 `egm-reviewer` agent preset, whose own plugin list ends with `dsh-egm/reviewer-tools`. The plugin
-names are part of the public bundle interface; only the file targets moved.
+names are part of the public bundle interface; only the file targets moved. The separate
+[`adapters/dsh/agent-presets.patch.yml`](../adapters/dsh/agent-presets.patch.yml) is not part of
+this manifest entry: it is the opt-in prerequisite overlay applied explicitly with `--patch` (see
+[Host prerequisites and current limit](#host-prerequisites-and-current-limit)).
 
 Because the host modules now live in `adapters/dsh/`, they derive the package root two levels up
 (`new URL('../../', import.meta.url)`), and the emitted resource paths still name the root `skills/`,
@@ -122,7 +164,8 @@ Because the host modules now live in `adapters/dsh/`, they derive the package ro
 checker and renderer.
 
 The packed set is enumerated explicitly in `package.json` `files`: the 26 vendored paths, the three
-host modules, the patch, the icon, both locale dictionaries, the two diagram SVGs, the README pair,
+host modules, both patch files (the active bundle patch and the opt-in prerequisites overlay), the
+icon, both locale dictionaries, the two diagram SVGs, the README pair,
 this guide, [TESTING.md](../TESTING.md), the remaining root documentation entries
 (`ADAPTER-NOTES.md`, `ADAPTATIONS.md` and the historical `E2E-VERIFICATION.md`), the lock and the
 legal files. The manual checker, the renderer, the D2 sources, the suites and the examples are
@@ -392,10 +435,10 @@ a passing acceptance.
 | **Goldfish** | A fresh-context, read-only reviewer; it never inherits the Elephant's conversation. |
 | **DSH** | DeepSeek Harness, the host this package is built for. |
 | **Bundle** | A DSH package that activates its plugins through a bundle patch. |
-| **Patch** | `cordis.patch.yml`, the bundle file that inserts the host plugin rows and the reviewer preset. |
+| **Patch** | `cordis.patch.yml`, the bundle file that inserts the host plugin rows and the reviewer preset; `agent-presets.patch.yml` is the separate opt-in overlay for profiles without an agent-preset registry. |
 | **Profile** | The Harness configuration a plugin is installed into (for example `web` or `sdk`). |
 | **Agent preset** | A named child-agent composition; this package declares `egm-reviewer`. |
-| **`agentPresets` registry** | The host service that registers presets and resolves a default; a profile prerequisite, not created by this bundle. |
+| **`agentPresets` registry** | The host service that registers presets and resolves a default; a profile prerequisite. `web` composes one; `headless` and `sdk` need the opt-in patch. |
 | **`spawn` provider** | The host's in-process subagent provider used to start a reviewer child. |
 | **Reviewer activation** | One `egm_reviewer` call: one fresh child, one prompt, one answer, single use. |
 | **Stage** | One of the five review stages 5–9 (Initial Zoom Out, Comprehension, Design Critique, Intermediate Zoom Out, Implementation Readiness). |

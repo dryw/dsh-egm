@@ -48,6 +48,7 @@
     "adapters/dsh/reviewer-host.js",
     "adapters/dsh/reviewer-tools.js",
     "adapters/dsh/cordis.patch.yml",
+    "adapters/dsh/agent-presets.patch.yml",
     "adapters/dsh/icon.svg",
     "adapters/dsh/locale/en.json",
     "adapters/dsh/locale/zh.json",

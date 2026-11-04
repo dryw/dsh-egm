@@ -26,13 +26,13 @@ Set `EGM_TEST_RUNTIME` to use another installation of the locked Node runtime
 - `test_dsh_live.py`: two paid tests, skipped unless explicitly enabled, and the
   `check` and `profile` commands. See [LIVE-README.md](LIVE-README.md).
 
-The replay profile in `test_dsh_live.py:profile_rows` composes an `agentPresets`
-registry and a minimal `standard` default preset because the bundle does not yet
-create them (owner decision D3 selects package-supplied setup; that setup is
-deferred to C1b). That is disclosed functional prerequisite assistance, distinct
-from the observer and provider instrumentation; a bare SDK or arbitrary profile
-does not get those rows, so bare-SDK and arbitrary-profile workflow remains
-pending. See
+`run_dsh` and the `profile` command pass the installed package's
+`adapters/dsh/agent-presets.patch.yml` (the opt-in D8 prerequisite patch) as an
+additional patch, so keyless and paid runs load the same file a user applies.
+`profile_rows` keeps only the observer, session-persistence and replay-provider
+rows, which are instrumentation rather than prerequisites. The keyless
+`test_missing_agent_presets` omits the patch and asserts the exact fail-closed
+error. See
 [TESTING.md](../../TESTING.md#host-prerequisites-and-current-limits) and
 [docs/dsh.md](../../docs/dsh.md).
 

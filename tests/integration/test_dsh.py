@@ -138,3 +138,38 @@ def test_adapter(installed_plugin, tmp_path):
                "child": ("seen" if seen(run_result, child) else "absent") if parent_seen else "inconclusive"}
     (tmp_path / "controls" / "host-context.json").write_text(json.dumps(context), encoding="utf-8")
     print(f"Host-injected AGENTS.md: {context}")
+
+
+def test_missing_agent_presets(installed_plugin, tmp_path):
+    """Without the shipped opt-in patch, a reviewer call fails closed with the exact error."""
+    root = tmp_path / "missing-agent-presets"
+    root.mkdir()
+    arguments = {"description": "missing-prerequisites", "prompt": "Read README.md."}
+    entries = [
+        {"kind": "chunks", "chunks": [
+            {"type": "block-start", "index": 0, "blockType": "tool-call"},
+            {"type": "tool-call-delta", "index": 0, "id": "missing-presets", "name": "egm_reviewer",
+             "argumentsDelta": json.dumps(arguments)},
+            {"type": "block-end", "index": 0,
+             "block": {"type": "tool-call", "id": "missing-presets", "name": "egm_reviewer",
+                       "arguments": json.dumps(arguments)}},
+            {"type": "finish", "reason": {"kind": "tool-calls"}},
+        ]},
+        {"kind": "chunks", "chunks": [
+            {"type": "block-start", "index": 0, "blockType": "text"},
+            {"type": "text-delta", "index": 0, "text": "PARENT_ACK"},
+            {"type": "block-end", "index": 0, "block": {"type": "text", "text": "PARENT_ACK"}},
+            {"type": "finish", "reason": {"kind": "stop"}},
+        ]},
+    ]
+    run_result = run_dsh(installed_plugin, root, [{"type": "text", "text": "Try one EGM reviewer."}],
+                         provider="egm-replay", model="fixed", provider_rows=replay(root, entries),
+                         agent_presets=False)
+    calls = [r for r in run_result["records"] if r["kind"] == "tool" and r["name"] == "egm_reviewer"]
+    assert len(calls) == 1 and calls[0]["sessionId"] == run_result["parent"]
+    result = calls[0]["result"]
+    assert result["isError"]
+    assert result["error"]["message"] == (
+        "egm_reviewer unavailable: the agent-presets service is not composed, "
+        "so the read-only egm-reviewer preset cannot be selected")
+    assert set(run_result["sessions"]) == {run_result["parent"]}, "a child was started without agent presets"

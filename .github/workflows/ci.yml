@@ -59,6 +59,11 @@ jobs:
           const missing = shipped.filter((file) => !files.has(file))
           const unexpected = [...files].filter((file) => !allowed.has(file))
 
+          // The opt-in prerequisite patch must ship even if the declared list is
+          // later edited: a profile without an agent-preset registry needs it.
+          const required = ['adapters/dsh/agent-presets.patch.yml']
+          const absent = required.filter((file) => !files.has(file))
+
           // Development-only trees and repository-only tooling must never be packed:
           // the suites, the historical examples and assessments, CI, private .dev
           // evidence, the D2 sources and their renderer, the manual upstream checker,
@@ -82,6 +87,10 @@ jobs:
 
           if (missing.length > 0) {
             console.error('declared files missing from the npm package:', missing)
+            process.exit(1)
+          }
+          if (absent.length > 0) {
+            console.error('required files missing from the npm package:', absent)
             process.exit(1)
           }
           if (unexpected.length > 0) {
