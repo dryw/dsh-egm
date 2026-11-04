@@ -42,6 +42,10 @@ a reviewer cannot delegate. Run the synthesis step as direct dispatch in the cur
 the reviewers with `egm_reviewer`, then write the consolidated report yourself. Do not start
 `egm-synthesizer` through `egm_reviewer` (it is read-only).
 
+Keep review stages 5, 6, 7, 8 and 9 sequential. Parallelize only reviewers within the current stage.
+Wait for every reviewer in that stage, write its report, and complete required remediation before
+dispatching the next stage. Uninterrupted mode skips human checkpoints, not these stage dependencies.
+
 Tell the reviewer to read its `Persona:` file first and follow it. Do not paste or summarize the
 persona: the reviewer reads the upstream file itself, as on hosts without registered persona agents.
 

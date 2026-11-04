@@ -158,6 +158,9 @@ test('the preamble keeps the DSH mechanics and names the persona by path', () =>
   assert.ok(preamble.includes('Every reviewer prompt must start with the line `Persona: <absolute path of agents/<file>.md under the package root>`'))
   assert.ok(preamble.includes('Tell the reviewer to read its Persona file first and follow it; do not paste or summarize the persona.'))
   assert.ok(!preamble.includes('persona body'), 'reviewers read their persona; the parent does not paste it')
+  // Upstream docs/claude.md states the same rule after a stage-order failure.
+  assert.ok(preamble.includes('Keep review stages 5, 6, 7, 8 and 9 sequential.'))
+  assert.ok(preamble.includes('Uninterrupted mode skips human checkpoints, not these stage dependencies.'))
   // Context-selection contracts, moved from the retired upstream-pin suite.
   for (const phrase of ['explicitly empty supplemental list', 'Stage 6 comprehension reads only the design',
     'Outside paths and URLs require owner approval', 'omit them when no one can answer',
