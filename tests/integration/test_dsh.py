@@ -2,12 +2,26 @@
 import json
 from pathlib import Path
 import subprocess
+import tarfile
 import uuid
 
 from test_dsh_live import RUNTIME, INVOCATIONS, run_dsh, child_traces, assert_skill_delivery
 from test_live_checks import replay
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_install(installed_plugin):
+    """Every packed file reaches the installed layout unchanged, like upstream's ZIP check."""
+    _, plugin, tarball = installed_plugin
+    with tarfile.open(tarball) as archive:
+        for member in archive.getmembers():
+            if not member.isfile():
+                continue
+            relative = member.name.removeprefix("package/")
+            installed = plugin / relative
+            assert installed.is_file(), f"Packed file missing from installation: {relative}"
+            assert installed.read_bytes() == archive.extractfile(member).read(), f"Installed file differs: {relative}"
 
 
 def test_adapter(installed_plugin, tmp_path):
@@ -17,6 +31,9 @@ def test_adapter(installed_plugin, tmp_path):
     baseline, mutation = b"BASELINE\n", b"CHILD_MUTATION\n"
     for path in sentinels:
         path.write_bytes(baseline)
+    # Upstream asks hosts to show what instruction files reach a fresh reviewer.
+    probe = "EGM instruction-file probe: " + uuid.uuid4().hex
+    (workspace / "AGENTS.md").write_text(probe + "\n", encoding="utf-8")
     entries = json.loads((FIXTURES / "isolation.override.json").read_text().replace("__WORKSPACE__", str(workspace)))
     seed = FIXTURES / "readonly-child.session.jsonl"
     # Validate the native-writer seed with DSH itself, not a fabricated event parser.
@@ -77,3 +94,11 @@ def test_adapter(installed_plugin, tmp_path):
             'EGM Goldfish reviewers are read-only: the "' + record["name"]
             + '" tool is not available in this reviewer context.')
     assert all(path.read_bytes() == baseline for path in sentinels)
+
+    seen = lambda run, session: probe in json.dumps(
+        [r for r in run["records"] if r["kind"] == "request" and r["sessionId"] == session])
+    parent_seen = seen(control, control["parent"]) or seen(run_result, run_result["parent"])
+    context = {"parent": "seen" if parent_seen else "absent",
+               "child": ("seen" if seen(run_result, child) else "absent") if parent_seen else "inconclusive"}
+    (tmp_path / "controls" / "host-context.json").write_text(json.dumps(context), encoding="utf-8")
+    print(f"Host-injected AGENTS.md: {context}")
