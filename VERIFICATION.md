@@ -85,8 +85,54 @@ depth limits.
 | Reviewer isolation tests | [test/reviewer.test.js](test/reviewer.test.js) covers §1–§4: preset selection, the `spawn` path and `maxDepth: 1`, fail-closed support errors, the deny list and the call-time guard | `node --test test/reviewer.test.js` |
 | Preset shape audit | The `egm-reviewer` preset matches §1 (read, read-image, search, compaction and the guard only) | read [cordis.patch.yml](cordis.patch.yml) and [reviewer-tools.js](reviewer-tools.js) |
 | Recorded end-to-end run | [E2E-VERIFICATION.md](E2E-VERIFICATION.md): 17 read-only reviewer activations across `/egm-brainstorm`, `/egm-draft` and `/egm-review`, DSH `0.2.1-rc.5` desktop profile, 2026-10-31 (plugin 0.2.0) | the record and its artifact hashes in [examples/e2e-verification/](examples/e2e-verification/) |
-| CI | Three jobs in [.github/workflows/ci.yml](.github/workflows/ci.yml): Ubuntu Node 22, Ubuntu Node 24, Windows Node 24. Each runs `node --test`; the pack check runs on every job | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
-| npm tarball contents | The CI pack check parses `npm pack --dry-run --json` and asserts required runtime and documentation files are present while `test/`, `examples/` and `.github/` are absent | `npm pack --dry-run --json` |
+| CI | Three JavaScript matrix lanes plus one Linux/Node 24/Python 3.12 keyless integration job in [.github/workflows/ci.yml](.github/workflows/ci.yml): Ubuntu Node 22, Ubuntu Node 24, Windows Node 24. Each JavaScript lane runs `node --test` and the pack check; the integration job runs both pytest scenarios | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
+| npm tarball contents | The CI pack check parses `npm pack --dry-run --json` and asserts required runtime and documentation files are present while `test/`, `tests/`, `examples/` and `.github/` are absent | `npm pack --dry-run --json` |
 | Test suite | `node --test` runs the full suite covering the manifest, engines, resources, skills, reviewer isolation, upstream parity and hashes, hygiene, UI metadata, and extra-file integrity ([test/integrity.test.js](test/integrity.test.js)); the count lives in [test/README.md](test/README.md) | `node --test` |
 | Upstream drift workflow | [.github/workflows/upstream-sync.yml](.github/workflows/upstream-sync.yml) runs daily and on demand; opens or refreshes a re-vendor issue on drift, and a second failure issue if the check errors; report-only | Actions tab, or `node scripts/check-upstream.mjs` locally |
 
+
+## Keyless real-host replay gate — 2026-11-03
+
+The repository now has two [Python integration cases](tests/integration/test_dsh.py), documented in
+[the integration README](tests/integration/README.md). They install the local npm tarball into a
+private Harness `sdk` profile and run synthetic model responses through native replay and the public
+Python SDK over stdio. The upstream content pin remains `a119668d7dc5d558664ba711d4671d11fb7270a8`;
+this change does not re-vendor upstream content. The earlier [manual run](E2E-VERIFICATION.md)
+and its artifacts remain historical live-model evidence.
+
+- **Isolation/read-only:** inspect actual child model requests for parent-marker absence and
+  authorized-marker presence, check the reviewer preset/tool schema, prove parent write/bash controls
+  succeed, reset disposable sentinels, and require identical child operations to receive the native
+  EGM reviewer-guard errors. The child must still complete successfully and leave both sentinels unchanged.
+- **Workflow:** fifteen real reviewer activations over fourteen ordered SDK phases; six overlapping
+  brainstorm reviewers; per-role native full/scoped resource reads; five native parent-written reports;
+  exactly eight output files; unchanged inventory input/source/test bytes; final/draft byte equality.
+- **Evidence and cleanup:** join actual activation/start/finish identities, require successful native
+  outcomes and no compaction, retain synthetic inputs/results/events on failure, and require each owned
+  SDK runtime PID to be absent after bounded close. Small synthetic contaminated-input and missing-evidence
+  controls verify the central assertions without adding native fault scenarios.
+
+Replay exercises the host plumbing and adapter restrictions. It does not establish live-model
+instruction following, reviewer insight, interactive approvals, graceful protocol shutdown or support
+for package versions/platforms outside the exercised tuple. The first integration lane is Linux,
+Node 24 and Python 3.12; existing JavaScript Ubuntu Node 22/24 and Windows Node 24 lanes remain.
+
+Validated locally on 2026-11-03 with Node 24.19.0, Python 3.12.14, native Harness/replay/preset
+packages 0.2.1-rc.5, pnpm 11.25.0, Python SDK 0.2.1rc2 and pytest 8.3.5. The Python SDK's
+bundled rc2 runtime dependency was installed but unused; the driver selected the locked npm rc.5 binary.
+
+| Check | Actual result |
+| --- | --- |
+| `npm ci --prefix tests/integration/runtime` | Passed using the committed lock |
+| `python -m pip install -r tests/integration/requirements.txt` in a fresh private venv; `python -m pip check` | Passed; no broken requirements |
+| `python -m pytest tests/integration/test_dsh.py -q` | **2 passed in 36.75s**, including both scenarios and all owned-runtime cleanup checks |
+| `npm test` | **56 passed** (54 declared tests plus two helper-file entries), including existing byte/content-parity gates |
+| CI packed-file assertions and actual test tarball inspection | **55 files**; no `test/`, `tests/`, examples, workflows or nested dependencies; root runtime dependencies unchanged |
+| CI YAML/settings and `git diff --check` | Passed locally; original JavaScript matrix preserved |
+
+Use the private-environment setup and exact case selectors in [the integration README](tests/integration/README.md).
+The CI job runs the same full pytest path with its temporary evidence directory under `runner.temp` and
+uploads synthetic evidence only on failure. Hosted GitHub Actions has not yet run for this change.
+
+The manifest unit check now classifies `tests/` alongside `test/` as development-only, matching the npm
+allowlist and CI package-leak check. No existing JavaScript suite was replaced or bulk-migrated.

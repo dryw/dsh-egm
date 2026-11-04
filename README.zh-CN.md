@@ -198,9 +198,16 @@ dsh-egm/
 ## 开发
 
 ```sh
-node --test                            # full suite: manifest, engines, vendored content, adapter, reviewer isolation, upstream parity, extra-file integrity
+node --test                            # unit and content suite: manifest, engines, vendored content, adapter, reviewer isolation, upstream parity, extra-file integrity
 node scripts/check-upstream.mjs        # reports whether upstream EGM moved since the pinned commit
 ```
+
+无需推理密钥的真实 Harness 集成测试使用独立、锁定版本的 Python/pytest 和 Node 测试环境，
+初始支持 Linux、Node 24 和 Python 3.12。它验证评审者实际输入的隔离、只读限制，以及脚本化的
+brainstorm → draft → review 流程。安装步骤和两个场景的选择命令见
+[`tests/integration/README.md`](tests/integration/README.md)。现有 JavaScript 单元与内容测试仍然
+无需安装依赖；集成测试依赖不会进入 npm 发布包。回放验证宿主行为，
+[已记录的手动运行](E2E-VERIFICATION.md) 则保留为独立的真实模型证据。
 
 图示源文件位于 [`diagrams/`](diagrams/README.md)，编辑 `.d2` 后用 `node diagrams/render.mjs` 重新渲染。
 

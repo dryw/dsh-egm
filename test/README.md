@@ -6,6 +6,10 @@ that the vendored tree stays byte-faithful, that the DeepSeek Harness integratio
 layer injects the right preamble and reviewer isolation, and that the bundle
 manifest, locale and icon satisfy the DSH plugin contract.
 
+The separate [Python integration suite](../tests/integration/README.md) runs two keyless,
+real-Harness scenarios on Linux/Node 24/Python 3.12. It does not replace this JavaScript suite
+or add dependencies to its unit/content checks. Install its locked dependencies separately.
+
 ## Requirements
 
 - Node.js **>= 22** (validated on v24.16.0). No `npm install` is needed: the
@@ -83,4 +87,4 @@ covered by equivalent checks here:
 | Portable plugin manifest and shared metadata consistency | `test/manifest.test.js`, `test/ui-meta.test.js` |
 | Marketplace/component path checks | not applicable: this bundle ships no marketplace or component paths; the DSH manifest and patch rows are checked instead |
 | Read-hook tests (POSIX shell) | not applicable: the package installs no hooks |
-| Trace-based harness integration tests | replaced by live probes recorded in the package review notes: upstream scenario probes through the installed skills, and the read-only reviewer isolation probe |
+| Trace-based harness integration tests | [keyless Python/native replay checks](../tests/integration/README.md) cover actual reviewer isolation/read-only enforcement and the installed-plugin workflow; [historical manual probes](../E2E-VERIFICATION.md) remain separate live-model evidence |

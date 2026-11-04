@@ -266,9 +266,17 @@ The adapter modules are the only runtime code this package adds.
 ## Development
 
 ```sh
-node --test                            # full suite: manifest, engines, vendored content, adapter, reviewer isolation, upstream parity, extra-file integrity
+node --test                            # unit and content suite: manifest, engines, vendored content, adapter, reviewer isolation, upstream parity, extra-file integrity
 node scripts/check-upstream.mjs        # reports whether upstream EGM moved since the pinned commit
 ```
+
+Keyless real-Harness integration tests use a separate, locked Python/pytest and Node runtime
+installation on Linux, Node 24 and Python 3.12. They cover actual reviewer input isolation,
+read-only enforcement and a scripted brainstorm → draft → review workflow. See
+[`tests/integration/README.md`](tests/integration/README.md) for setup and the two scenario selectors.
+The existing JavaScript unit/content suite stays dependency-free; the integration dependencies
+are test-only and are excluded from the npm package. Scripted replay checks host behavior,
+while the [recorded manual run](E2E-VERIFICATION.md) remains separate live-model evidence.
 
 Diagrams: D2 sources under [`diagrams/`](diagrams/README.md); re-render with
 `node diagrams/render.mjs`.

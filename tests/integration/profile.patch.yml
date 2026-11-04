@@ -1,0 +1,15 @@
+[
+  {"id": "llm-deepseek", "disabled": true},
+  {"id": "session-persistence-jsonl", "config": {"root": "__SESSIONS__", "compression": "none"}},
+  {"insert": [
+    {"id": "agent-preset-registry", "name": "__MODULES__/@deepseek-ai/dsh-agent-preset-registry/lib/index.js", "config": {"default": "standard"}},
+    {"id": "preset-standard", "name": "__MODULES__/@deepseek-ai/dsh-agent-preset/lib/index.js", "config": {"id": "standard", "plugins": []}}
+  ]},
+  {"insert": [
+    {"id": "egm-test-observer", "name": "__OBSERVER__"},
+    {"id": "egm-test-replay", "name": "__MODULES__/@deepseek-ai/dsh-llm-replay/lib/index.js", "config": {
+      "file": "__OVERRIDE__", "overrideFile": "__OVERRIDE__", "childFiles": [],
+      "providers": [{"id": "egm-replay", "name": "Synthetic EGM replay", "models": [{"id": "fixed", "contextWindow": 1048576}]}]
+    }}
+  ]}
+]

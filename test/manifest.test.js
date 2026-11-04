@@ -249,10 +249,11 @@ test('files covers every runtime file that is not always shipped', () => {
   for (const absolute of walkFiles(PACKAGE_ROOT)) {
     const relativePath = relativeToPackage(absolute)
     if (ALWAYS_SHIPPED.has(relativePath)) continue
-    // Development-only content is deliberately not packed: the node --test suite, the
-    // recorded examples run and the GitHub workflows live in the repository alone. Everything else that is
+    // Development-only content is deliberately not packed: the JavaScript and Python suites,
+    // recorded examples and GitHub workflows live in the repository alone. Everything else that is
     // not always shipped must be covered by a `files` entry.
     if (relativePath.startsWith('test/')) continue
+    if (relativePath.startsWith('tests/')) continue
     if (relativePath.startsWith('examples/')) continue
     if (relativePath.startsWith('.github/')) continue
     if (relativePath.split('/').some((segment) => segment.startsWith('.'))) continue
