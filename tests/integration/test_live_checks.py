@@ -104,8 +104,30 @@ def test_next_stage_before_report_fails(tmp_path):
     call = next(r for r in run["sessions"]["P"] if r.get("data", {}).get("callId") == "spawn6")
     call["time"] = 1  # dispatched, and finished, before report 5 exists
     run["sessions"]["C6"][-1]["time"] = 2
-    with pytest.raises(AssertionError, match="stage 6 has no reviewer"):
+    with pytest.raises(AssertionError, match="stage 6 has no reviewer dispatched after report 5"):
         assert_stage_order(run)
+
+
+def test_all_stages_dispatched_at_once_fails(tmp_path):
+    # Seen in a live run: every review stage dispatched before any report was written.
+    run = synthetic_run(tmp_path)
+    for row in run["sessions"]["P"]:
+        if row.get("type") == "tool/call" and row["data"]["callId"].startswith("spawn"):
+            row["time"] = 1
+    for stage in range(5, 10):
+        run["sessions"][f"C{stage}"][-1]["time"] = 2
+    with pytest.raises(AssertionError, match="stage 6 has no reviewer dispatched after report 5"):
+        assert_stage_order(run)
+
+
+def test_brainstorm_prompt_may_name_no_target(tmp_path):
+    run = synthetic_run(tmp_path)
+    spawn = next(r for r in run["records"] if r.get("callId") == "spawn5")
+    spawn["arguments"]["prompt"] = (f"Persona: {PERSONA}\nMode: BRAINSTORM\n"
+                                    "TargetFile: none (BRAINSTORM). No design document exists yet.\n"
+                                    "TargetStandard: none (BRAINSTORM uses the persona's own lens)\n")
+    stages = {"5": [], **{str(n): [f"C{n}"] for n in range(6, 10)}}
+    assert_required_reads(run, stages)
 
 
 def test_reviewer_finishing_after_its_report_fails(tmp_path):

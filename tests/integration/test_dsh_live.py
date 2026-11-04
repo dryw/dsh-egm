@@ -280,6 +280,12 @@ def envelope(prompt, key):
     return match.group(1) if match else None
 
 
+def named_path(prompt, key):
+    """An envelope path, or None when the line says none, e.g. "none (BRAINSTORM ...)"."""
+    value = envelope(prompt, key)
+    return None if value is None or re.match(r"none\b", value, re.IGNORECASE) else value
+
+
 def row_times(run, kind):
     """Native tool/call or tool/result times by call id, from the parent log."""
     rows = [r for r in run["sessions"].get(run["parent"], []) if r.get("type") == kind]
@@ -326,7 +332,8 @@ def assert_stage_order(run):
         else:
             stages[str(index + 5)].append(d["child"])
     for index, stage in enumerate(stages):
-        assert stages[stage], f"stage {stage} has no reviewer"
+        assert stages[stage], f"stage {stage} has no reviewer dispatched after report {int(stage) - 1}"
+    for index, stage in enumerate(stages):
         for child in stages[stage]:
             ends = [r["time"] for r in run["sessions"][child] if r.get("type") == "turn/end"]
             assert ends and max(ends) <= first[index], f"stage {stage} reviewer finished after its report"
@@ -338,9 +345,10 @@ def assert_required_reads(run, stages):
     stage_of = {child: stage for stage, children in stages.items() for child in children}
     personas = {}
     for d in dispatches(run):
-        persona, target = envelope(d["prompt"], "Persona"), envelope(d["prompt"], "TargetFile")
+        persona = envelope(d["prompt"], "Persona")
         assert persona, "missing Persona line"
-        assert target, "missing TargetFile line"
+        assert envelope(d["prompt"], "TargetFile"), "missing TargetFile line"
+        target = named_path(d["prompt"], "TargetFile")
         agents = os.path.realpath(run["plugin"] / "agents") if run["plugin"] else None
         persona_path = resolve(run, persona)
         assert (persona_path.startswith(agents + os.sep) if agents
@@ -348,10 +356,7 @@ def assert_required_reads(run, stages):
             f"persona outside the installed package: {persona}"
         stage = stage_of.get(d["child"], "brainstorm" if envelope(d["prompt"], "Mode") == "BRAINSTORM" else "remediation")
         personas.setdefault(stage, []).append(os.path.basename(persona_path))
-        required = [persona, target]
-        standard = envelope(d["prompt"], "TargetStandard")
-        if standard and standard.lower() != "none":
-            required.append(standard)
+        required = [persona] + [path for path in (target, named_path(d["prompt"], "TargetStandard")) if path]
         if stage == "8":
             required.append("zoom_out_report.md")
         reads = [r for r in run["records"] if r["kind"] == "tool" and r["sessionId"] == d["child"]
