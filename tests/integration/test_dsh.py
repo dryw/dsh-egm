@@ -1,4 +1,5 @@
 """One keyless adapter scenario; replay supplies responses, not EGM decisions."""
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -11,10 +12,29 @@ from test_live_checks import replay
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+def assert_vendored_archive(archive, lock):
+    """Every locked vendored member equals its raw pinned bytes.
+
+    Read each member as bytes: newline normalization or another text rewrite
+    would hide a changed representation, so this check is deliberately separate
+    from the LF-normalized Node content gate.
+    """
+    for entry in lock["files"]:
+        member = "package/" + entry["adapted"]
+        try:
+            data = archive.extractfile(member).read()
+        except KeyError:
+            raise AssertionError(f"locked member missing from the archive: {member}") from None
+        digest = hashlib.sha256(data).hexdigest()
+        assert digest == entry["sha256"], f"archive member differs from the locked raw bytes: {member}"
+
+
 def test_install(installed_plugin):
     """Every packed file reaches the installed layout unchanged, like upstream's ZIP check."""
     _, plugin, tarball = installed_plugin
     with tarfile.open(tarball) as archive:
+        lock = json.loads((plugin / "upstream.lock.json").read_text(encoding="utf-8"))
+        assert_vendored_archive(archive, lock)
         for member in archive.getmembers():
             if not member.isfile():
                 continue

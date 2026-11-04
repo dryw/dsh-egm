@@ -1,6 +1,9 @@
 """Keyless checks for the small live harness; never selects a real provider."""
 import copy
+import hashlib
+import io
 import json
+import tarfile
 
 import pytest
 
@@ -288,3 +291,78 @@ def test_progress_reports_reviewers_and_writes(capsys):
     lines = capsys.readouterr().out.splitlines()
     assert [line.split("] ", 1)[1] for line in lines] == [
         "reviewer started: Stage 5 zoom-out", "write: zoom_out_report.md", "reviewer finished (ok): Stage 5 zoom-out"]
+
+
+def test_identity_reads_the_installed_pin(tmp_path, monkeypatch):
+    """An explicitly selected tarball records its own upstream pin, not the checkout's."""
+    from datetime import datetime, timezone
+    import test_dsh_live
+
+    plugin = tmp_path / "plugin"
+    plugin.mkdir()
+    fixture_version = "9.9.9-fixture"
+    (plugin / "package.json").write_text(json.dumps({"version": fixture_version}), encoding="utf-8")
+    real_pin = json.loads((test_dsh_live.REPO / "upstream.lock.json").read_text(encoding="utf-8"))["commit"]
+    fixture_pin = "2" * 40
+    assert fixture_pin != real_pin
+    (plugin / "upstream.lock.json").write_text(json.dumps({"commit": fixture_pin}), encoding="utf-8")
+
+    runtime = tmp_path / "runtime"
+    fake_dsh = runtime / "node_modules/@deepseek-ai/dsh"
+    fake_dsh.mkdir(parents=True)
+    (fake_dsh / "package.json").write_text(json.dumps({"version": "0.2.1-rc.5"}), encoding="utf-8")
+    tarball = tmp_path / "candidate.tgz"
+    payload = b"dummy candidate tarball bytes\n"
+    tarball.write_bytes(payload)
+
+    # Fixture values select write_identity's tarball branch: no Git or model call.
+    monkeypatch.setattr(test_dsh_live, "RUNTIME", runtime)
+    monkeypatch.setattr(test_dsh_live, "TARBALL", tarball)
+    monkeypatch.setenv("DSH_EGM_SOURCE_SHA", "1" * 40)
+    root = tmp_path / "run"
+    root.mkdir()
+    test_dsh_live.write_identity(root, plugin, tarball, "fixture-model", "sdk-headless")
+
+    identity = json.loads((root / "identity.json").read_text(encoding="utf-8"))
+    assert identity["upstream_commit"] == fixture_pin
+    assert identity["upstream_commit"] != real_pin
+    assert identity["tarball_sha256"] == hashlib.sha256(payload).hexdigest()
+    assert identity["package_version"] == fixture_version
+    assert identity["dsh_version"] == "0.2.1-rc.5"
+    assert identity["source_sha"] == "1" * 40
+    assert identity["surface"] == "sdk-headless"
+    assert identity["model"] == "fixture-model"
+    assert identity["reasoning_effort"] == test_dsh_live.REASONING
+    assert identity["date_utc"] == datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    assert identity["dirty"] is None
+
+
+def test_vendored_archive_bytes_are_literal():
+    """LF bytes pass the raw check; CRLF-rewritten bytes with the LF hash fail it."""
+    from test_dsh import assert_vendored_archive
+
+    def candidate(payload):
+        buffer = io.BytesIO()
+        with tarfile.open(fileobj=buffer, mode="w") as archive:
+            info = tarfile.TarInfo("package/skills/example/SKILL.md")
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+        buffer.seek(0)
+        return tarfile.open(fileobj=buffer)
+
+    lf = b"# Skill\n\nLine one.\nLine two.\n"
+    entry = {"upstream": "skills/example/SKILL.md", "adapted": "skills/example/SKILL.md",
+             "sha256": hashlib.sha256(lf).hexdigest()}
+    lock = {"files": [entry]}
+    with candidate(lf) as archive:
+        assert_vendored_archive(archive, lock)
+    with candidate(lf.replace(b"\n", b"\r\n")) as archive:
+        with pytest.raises(AssertionError, match="archive member differs"):
+            assert_vendored_archive(archive, lock)
+    with candidate(lf + b"stray\n") as archive:
+        with pytest.raises(AssertionError, match="archive member differs"):
+            assert_vendored_archive(archive, lock)
+    missing = {"files": [{**entry, "adapted": "skills/missing/SKILL.md"}]}
+    with candidate(lf) as archive:
+        with pytest.raises(AssertionError, match="locked member missing"):
+            assert_vendored_archive(archive, missing)

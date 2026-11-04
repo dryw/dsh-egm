@@ -30,8 +30,10 @@ logs private; the client closes in `finally`.
 
 The workflow test sends the unchanged upstream line-count prompt after one block
 of native slash invocations of the three skills. Each paid test writes
-`identity.json` before the model runs. The workflow test writes `checks.json`
-with every check's result, then fails if any check failed. See
+`identity.json` before the model runs; its upstream pin comes from the installed
+package's own `upstream.lock.json`, so an explicitly selected tarball records the
+pin it was packed from rather than this checkout's. The workflow test writes
+`checks.json` with every check's result, then fails if any check failed. See
 [VERIFICATION.md](../../VERIFICATION.md) for how to read it.
 
 ## Manual interactive run

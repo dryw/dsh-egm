@@ -83,6 +83,8 @@ dsh plugin --profile web add dsh-egm
 
 Restart Harness, then check **Settings → Plugins** to confirm it's enabled.
 
+The bundle declares the read-only `egm-reviewer` preset, but it does not create the host's agent-preset service. `egm_reviewer` needs a profile that composes an `agentPresets` registry resolving a valid default preset, plus an in-process `spawn` subagent provider. Harness `web` profiles compose an agent-preset registry with a `standard` default; a bare SDK profile does not. Without them `egm_reviewer` fails closed with an actionable error (`the agent-presets service is not composed` for the missing registry). Package-supplied setup for a genuinely missing registry is not implemented yet, so a bare SDK profile cannot run reviews in this release.
+
 For local development, you can install from a checkout instead:
 
 ```bash
@@ -109,12 +111,12 @@ The Elephant helps you explore requirements, alternatives, and trade-offs. The b
 /egm-draft
 ```
 
-The Elephant develops a specification section by section, asking for your decisions rather than silently filling in the blanks. By default, it saves the draft as DESIGN.md in a feature-named folder under docs/designs/ (for example, docs/designs/webhook-delivery/DESIGN.md).
+The Elephant develops a specification section by section, asking for your decisions rather than silently filling in the blanks. The working draft is `design_draft.md` in your project working directory (or the EGM artifact directory). When you finalize it, the skill asks where to save and writes the final design as `<FEATURE>.md`; the default directory is `docs/designs/`, for example `docs/designs/webhook-delivery.md`.
 
 **3. Send in the Goldfish.**
 
 ```text
-/egm-review docs/designs/webhook-delivery/DESIGN.md
+/egm-review design_draft.md
 ```
 
 Fresh-context, read-only reviewers examine the design for ambiguities, missing contracts, failure cases, and implementation risks.
@@ -187,8 +189,7 @@ my-project/
 ├── AGENTS.md
 └── docs/
     └── designs/
-        └── webhook-delivery/
-            └── DESIGN.md
+        └── webhook-delivery.md
 ```
 
 Your artifact locations depend on the skill and project setup. To direct EGM's working artifacts to a separate directory, add this to your project's `AGENTS.md`:

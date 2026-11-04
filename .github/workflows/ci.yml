@@ -105,8 +105,11 @@ jobs:
             ...personas.map((persona) => `agents/${persona}.md`),
           ]
           const missing = required.filter((file) => !files.has(file))
+          // Directory EGM maps are temporary review sidecars. They must never be
+          // packed, including sidecars under otherwise-shipped roots.
           const leaked = [...files].filter(
             (file) =>
+              file.endsWith('EGM.md') ||
               file.startsWith('test/') ||
               file.startsWith('tests/') ||
               file.startsWith('docs/testing/') ||

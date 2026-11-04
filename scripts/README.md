@@ -5,12 +5,15 @@ Repository tooling. Node >= 22, zero dependencies. The npm package ships
 
 ## `check-upstream.mjs` — semi-automatic upstream tracking
 
-The package is a port of
+The package is the DeepSeek Harness adapter for
 [`google/elephant-goldfish-model`](https://github.com/google/elephant-goldfish-model)
-(Apache-2.0). `upstream.lock.json` pins the upstream commit and the SHA-256 of every
-upstream file this package adapted (and of every file vendored as a test fixture).
-This script compares that pin with the upstream default branch and reports which
-adapted files a re-adaptation must touch.
+(Apache-2.0). `upstream.lock.json` pins the upstream commit and, for every
+vendored upstream file this package ships, the SHA-256 of its repository text
+with LF line endings. The Node test compares the shipped files as LF-normalized
+text; the Python archive check hashes each packed member's raw bytes and compares
+that digest with the recorded value. This script compares that pin with the
+upstream default branch and reports which vendored files a re-adaptation must
+touch.
 
 ```sh
 # Check the upstream default branch against the lock (exit 0 clean, 1 drift, 2 error)
@@ -39,7 +42,7 @@ node scripts/check-upstream.mjs --update-lock --source ../egm-source
 `.github/workflows/upstream-sync.yml` runs daily (and on demand). It executes the
 script; on drift it opens — or comments on — the issue **"Upstream EGM changed:
 re-vendor bundled skills"** with the affected files and a checklist. A human then
-re-adapts, refreshes the vendored fixtures, runs `node --test`, refreshes the lock,
+re-adapts, refreshes the vendored files, runs `node --test`, refreshes the lock,
 and releases.
 
 If the check itself cannot complete (GitHub API or network error, script exit 2), the

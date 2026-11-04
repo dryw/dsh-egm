@@ -6,6 +6,16 @@ Harness *loads* a skill, the plugin prepends a `<dsh_integration>` preamble with
 mechanics below. When you instead **read a `SKILL.md` from disk** (for example because a prompt told
 you to follow the installed skill), the preamble is not in the file — read these notes as well.
 
+## Host prerequisites
+
+`egm_reviewer` needs three things from the profile it is installed into:
+
+- an `agentPresets` registry service that resolves a valid default preset;
+- an in-process `spawn` subagent provider;
+- the package-declared `egm-reviewer` preset, which this bundle adds.
+
+The bundle does not create the registry or its default. Harness `web` profiles compose an agent-preset registry with a `standard` default; a bare SDK profile does not. Without the service the tool fails closed with an actionable error instead of starting a child. The integration tests currently supply the registry and a minimal `standard` default in their replay profile; package-supplied setup for a genuinely missing registry is planned, not shipped.
+
 ## Reviewer spawning
 
 - Start every Goldfish reviewer with the plugin's tool:
@@ -23,7 +33,7 @@ you to follow the installed skill), the preamble is not in the file — read the
 
 ## Reviewer prompt envelope (use every time)
 
-A reviewer is a fresh child: the prompt is the only context. Upstream personas assume these inputs
+A reviewer is a fresh child: the prompt is its only task context, and it does not inherit the Elephant's conversation. The host may still inject its own instructions (for example a project `AGENTS.md`), so keep the envelope self-contained and name every input the reviewer must read. Upstream personas assume these inputs
 without defining them, so every `egm_reviewer` prompt must carry them explicitly:
 
 ```text

@@ -23,12 +23,12 @@ T = [`TESTING.md`](https://github.com/google/elephant-goldfish-model/blob/113a3a
 | # | Upstream requirement | Check, record or limit | Status |
 | --- | --- | --- | --- |
 | 1 | Manifest parsing, identity, version (A) | `manifest`, `engines`, `ui-meta` tests; CI pack check | Pass |
-| 2 | Persona, standard, guide paths in the installed layout (A) | `test_install`: every packed file equals the installed file | Pass (keyless) |
+| 2 | Persona, standard, guide paths in the installed layout (A) | `test_install`: every packed file equals the installed file, and every locked vendored member's literal bytes hash to its recorded lock SHA-256 (no newline normalization) | Pass (keyless) |
 | 3 | Adapter tool restrictions (A) | `reviewer` test; `test_adapter` real denials | Pass |
-| 4 | No copies of shared behavior; no fork of skill text (A, H) | `upstream-lock`: the bundled copy is byte-identical to `113a3af`, a pinned copy, not a fork. The preamble restates some upstream rules in DSH terms. Whether an external package counts is row 19 | Pass; packaging open |
+| 4 | No copies of shared behavior; no fork of skill text (A, H) | `upstream-lock`: the bundled copy matches the LF-normalized `113a3af` bytes recorded in the lock, a pinned copy, not a fork; the raw archive bytes are checked by row 2. The preamble restates some upstream rules in DSH terms. Whether an external package counts is row 19 | Pass; packaging open |
 | 5 | Negative fixtures for each evidence parser (A) | Synthetic cases in `test_live_checks.py` | Pass (keyless) |
-| 6 | Clean host profile, fixed candidate (A) | Disposable `DSH_HOME`; `DSH_EGM_TARBALL` | Paid run |
-| 7 | Candidate SHA, checksum, host version and surface, model, date (A) | `identity.json` | Paid run |
+| 6 | Clean host profile, fixed candidate (A) | Disposable `DSH_HOME`; `DSH_EGM_TARBALL`. Limit: the replay fixtures add the `agentPresets` registry and a `standard` default preset that the bundle does not yet supply, so a bare SDK profile's `egm_reviewer` refuses until package-supplied setup exists | Paid run |
+| 7 | Candidate SHA, checksum, host version and surface, model, date (A) | `identity.json`; the upstream pin comes from the installed package's own `upstream.lock.json` | Paid run |
 | 8 | Install, workflow, isolation recorded separately (A) | `test_install`; `test_brainstorm_draft_review`; `test_adapter` and `test_fresh_context_isolation` | Paid run |
 | 9 | Brainstorm, draft, review end to end through the install (H) | `test_brainstorm_draft_review` | Paid run |
 | 10 | A real human approval pause (A) | Manual run record, quoting the native question and answer rows | Manual run |
@@ -43,6 +43,23 @@ T = [`TESTING.md`](https://github.com/google/elephant-goldfish-model/blob/113a3a
 | 19 | Manifest in the upstream repo, `docs/harnesses.md` entry, transcripts in the PR (H) | Upstream decides: external package, or a manifest and adapter moved upstream ([#240](https://github.com/google/elephant-goldfish-model/issues/240)) | Open |
 | 20 | A successful read is non-error, non-empty text and does not prove the whole file was read (T) | Rule in `assert_required_reads` | Limit stated |
 | 21 | Reviewers cannot reach unrelated reports through the filesystem (A) | None: DSH guards tool names, not paths | Limit |
+
+## Host prerequisites and current limits
+
+`egm_reviewer` needs a profile that composes an `agentPresets` registry resolving a
+valid default preset, plus an in-process `spawn` subagent provider. The bundle
+declares the read-only `egm-reviewer` preset but does not create the registry or
+its default. Harness `web` profiles compose a registry with a `standard` default;
+a bare SDK profile does not, and the tool fails closed with an actionable error.
+The keyless replay fixtures add those two rows themselves, so they are disclosed
+prerequisite assistance, not observation. Owner decision D3/D3a selects
+package-supplied setup when the registry is genuinely absent; that is not
+implemented in this tree yet, so bare SDK and arbitrary-profile workflow remains
+pending.
+
+The test `identity.json` reads the upstream pin from the installed package's own
+lock. A hand-selected tarball therefore records its own pin instead of this
+checkout's.
 
 ## Live results
 
@@ -120,3 +137,24 @@ separately.
   The preamble changed after this candidate, so a final run on the release
   candidate and the manual interactive run are pending. [Historical results](E2E-VERIFICATION.md)
   do not establish acceptance of the current package.
+
+## Current free checks (not acceptance)
+
+The uncommitted in-place repairs were checked on 2026-11-04:
+
+- Node suite with `EGM_SOURCE`: 43 passed, 0 skipped (LF-normalized pinned-object
+  comparisons included).
+- WSL `DSH_EGM_LIVE=0 pytest tests/integration -q`: 29 passed, 2 paid tests
+  skipped, including the new installed-pin identity and literal archive-byte
+  regressions.
+- Offline raw-Git provenance: pass. Source blob
+  `6ae169192f6817b2f9b33ebb495c4432866c0caa`, prompt SHA-256
+  `9e7a49cefaeb618fcf8aede675af825cc2c3ee7aab51a441c7689da45747630f`, all 26
+  lock hashes equal to pinned Git objects.
+- Candidate archive from this tree: 53 files, no `EGM.md` map. All 26 vendored
+  members equal the lock's raw SHA-256 and the pinned Git objects; installing it
+  in a disposable profile produced 53 identical files, no maps, and the expected
+  version and pin.
+
+These are keyless gates. They do not establish the workflow, the human pause or
+upstream acceptance; those remain pending.

@@ -12,7 +12,7 @@ or add dependencies to its unit/content checks. Install its locked dependencies 
 
 ## Requirements
 
-- Node.js **>= 22** (locally validated on v24.19.0). No `npm install` is needed: the
+- Node.js **>= 22** (locally validated on Node 24). No `npm install` is needed: the
   suite imports only `node:` builtins and the package's own files.
 - Run from the package root (the directory containing `package.json`).
 
@@ -34,10 +34,11 @@ node --test "test/plugin.test.js"
 > directory itself, so Node tries to execute it as a test file and fails with
 > `Cannot find module .../test`. Use `node --test` or the quoted glob above.
 
-The suite currently has **41 tests** (`node --test` also lists the helper module
-`test/helpers.js` as a file-level subtest, so its headline count is 42). Check against another DSH runtime by setting
-`DSH_RUNTIME_VERSION` (default `0.2.1-rc.5`, the version the `engines.dsh` range is
-validated against):
+`node --test` also lists the helper module `test/helpers.js` as a file-level
+subtest, so its headline count is one higher than the number of tests. Read the
+current count from the run output rather than a recorded total. Check against
+another DSH runtime by setting `DSH_RUNTIME_VERSION` (default `0.2.1-rc.5`, the
+version the `engines.dsh` range is validated against):
 
 ```sh
 DSH_RUNTIME_VERSION=0.2.2 node --test
@@ -54,9 +55,9 @@ PowerShell: `$env:DSH_RUNTIME_VERSION='0.2.2'; node --test`.
 | `test/skills.test.js` | The seven vendored `skills/<dir>/SKILL.md` files exist; YAML frontmatter parses (including upstream's folded `>-` descriptions, which the adapter folds to one line); `name` is kebab-case and equals the directory; `description` is usable and at most 500 characters after folding; `license` stays `Apache-2.0`; invocation flags are literal booleans. |
 | `test/resources.test.js` | The 19 vendored shared paths exist (upstream resources, skill-local `references/`, and `agents/*.md` personas); every `resources/...` path mentioned in skill or agent Markdown resolves against the package root; references use forward slashes; agent personas are non-empty Markdown. |
 | `test/plugin.test.js` | `index.js` re-exports the integration layer; `apply()` registers all seven skills via `ctx.effect`/`ctx.skills.register`; each registration starts with the `<dsh_integration>` preamble, ends with the verbatim upstream body, and uses the package root as its resource base; the preamble keeps the DSH mechanics, names each reviewer's persona by a `Persona:` path, and keeps the context-selection contracts; the parser accepts every bundled `SKILL.md`, folds upstream block scalars, rejects YAML lists, and a malformed bundled skill fails activation instead of shrinking the install. |
-| `test/reviewer.test.js` | The `egm_reviewer` tool tells the model to name the persona file rather than paste it, starts exactly one `spawn` activation in the `egm-reviewer` preset with a depth cap of 1; it fails closed without the preset service, a `spawn` provider, or the declared preset; reviewer agents get a deny-list restriction that hides every non-read-only tool; the preset guard denies every non-allowlisted call and keeps `read`, `read_image`, `glob`, `grep` and the read-only `ops_*` readers. |
+| `test/reviewer.test.js` | The `egm_reviewer` tool tells the model to name the persona file rather than paste it, starts exactly one `spawn` activation in the `egm-reviewer` preset with a depth cap of 1; it fails closed without the preset service, a `spawn` provider, or the declared preset; reviewer agents get a deny-list restriction that hides the non-read-only tools known at that point; the preset guard denies every non-allowlisted call (including a tool published later) and keeps `read`, `read_image`, `glob`, `grep` and the read-only `ops_*` readers. |
 | `test/ui-meta.test.js` | `locale/en.json` and `locale/zh.json` declare non-empty `meta.title` and `meta.description`; locale filenames are language ids; `icon.svg` is valid SVG under DSH's 256 KiB limit and is reachable through `exports "./icon"`. |
-| `test/upstream-lock.test.js` | The one content gate. `upstream.lock.json` pins the upstream repository, commit and the 26 files in `scripts/check-upstream.mjs`; every shipped vendored file is byte-identical to its SHA-256 (LF-normalised); every git-tracked file under `skills/`, `agents/` and `resources/` has a lock entry and every entry is tracked; `files` ships every adapted file; with `EGM_SOURCE=<checkout>` every entry equals `git show <commit>:<path>`. Byte-identical files need no further upstream content tests. |
+| `test/upstream-lock.test.js` | The one content gate. `upstream.lock.json` pins the upstream repository, commit and the 26 files in `scripts/check-upstream.mjs`; every shipped vendored file matches its SHA-256 as LF-normalized text; every git-tracked file under `skills/`, `agents/` and `resources/` has a lock entry and every entry is tracked; `files` ships every adapted file; with `EGM_SOURCE=<checkout>` every entry equals `git show <commit>:<path>`. Byte-identical files need no further upstream content tests. The Python `test_install` adds the literal check: it hashes each packed member's raw bytes and compares that digest with the lock's recorded SHA-256, so a newline-representation change cannot pass both gates. |
 
 `test/helpers.js` holds the shared readers (frontmatter parser, file walker,
 `files` glob matcher and a small SemVer range checker that mirrors DSH's

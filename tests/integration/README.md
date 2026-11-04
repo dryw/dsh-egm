@@ -12,14 +12,25 @@ npm ci --prefix tests/integration/runtime
 Set `EGM_TEST_RUNTIME` to use another installation of the locked Node runtime
 (use a Linux-local directory under WSL). `npm test` runs the separate Node suite.
 
-- `test_dsh.py`: `test_install` compares every packed file with the installed copy;
-  `test_adapter` checks skill delivery, parent controls, fresh-context isolation,
-  reads, write/shell guard denials, child completion, and records whether a project
-  `AGENTS.md` reaches the parent and the reviewer (`controls/host-context.json`).
+- `test_dsh.py`: `test_install` compares every packed file with the installed copy
+  and hashes every locked vendored archive member's literal bytes, comparing the
+  digest with the lock (no newline normalization); `test_adapter` checks skill
+  delivery, parent controls, fresh-context isolation, reads, write/shell guard
+  denials, child completion, and records whether a project `AGENTS.md` reaches
+  the parent and the reviewer (`controls/host-context.json`).
 - `test_live_checks.py`: synthetic negative cases showing each evidence check can
   fail, including malformed JSONL and rejection of parent-only reviewer claims.
+  Keyless regressions also prove `write_identity` reads the installed package's
+  own upstream pin and that the archive byte check rejects CRLF-rewritten bytes.
 - `test_dsh_live.py`: two paid tests, skipped unless explicitly enabled, and the
   `check` and `profile` commands. See [LIVE-README.md](LIVE-README.md).
+
+The replay profile in `test_dsh_live.py:profile_rows` composes an `agentPresets`
+registry and a minimal `standard` default preset because the bundle does not yet
+create them (owner decision D3 selects package-supplied setup). That is disclosed
+functional prerequisite assistance, distinct from the observer and provider
+instrumentation; a bare SDK profile does not get those rows. See
+[VERIFICATION.md](../../VERIFICATION.md#host-prerequisites-and-current-limits).
 
 Evidence is retained under pytest's temporary directory: requests/tool results,
 notifications, native Sessions and artifacts. Use a fresh `--basetemp` path to keep

@@ -87,6 +87,8 @@ dsh plugin --profile web add dsh-egm
 
 重启 Harness，然后在 **设置 → 插件** 中确认插件已被启用。
 
+本软件包声明了只读的 `egm-reviewer` 预设，但不会创建宿主的 agent-preset 服务。`egm_reviewer` 要求 profile 组合一个能解析出有效默认预设的 `agentPresets` 注册表，以及一个进程内的 `spawn` 子 Agent 提供者。Harness 的 `web` profile 会组合注册表与默认预设；裸 SDK profile 不会。缺失时 `egm_reviewer` 会明确报错（缺少注册表时报 `the agent-presets service is not composed`）。本版本尚未实现由软件包为真正缺失的注册表提供配置，因此裸 SDK profile 目前无法运行评审。
+
 如果是本地开发，也可以直接从本地检出目录安装：
 
 ```bash
@@ -113,12 +115,12 @@ dsh plugin --profile web add /path/to/dsh-egm
 /egm-draft
 ```
 
-大象将逐节制定规格说明，主动询问你的决策，而不是默默自行填补空白。默认情况下，它会将草稿保存为 DESIGN.md，存放在以功能命名的文件夹中（例如 docs/designs/webhook-delivery/DESIGN.md）。
+大象将逐节制定规格说明，主动询问你的决策，而不是默默自行填补空白。工作草稿保存为项目工作目录（或 EGM 产物目录）中的 `design_draft.md`。最终确定时，技能会询问保存位置，并将最终设计写为 `<FEATURE>.md`；默认目录为 `docs/designs/`，例如 `docs/designs/webhook-delivery.md`。
 
 **3. 让金鱼入场。**
 
 ```text
-/egm-review docs/designs/webhook-delivery/DESIGN.md
+/egm-review design_draft.md
 ```
 
 具备全新上下文的只读评审者将审查该设计，找出歧义、缺失的契约、失败边界情况以及实现风险。
@@ -158,7 +160,7 @@ Google 的上游项目提供了 EGM 的技能、评审者角色设定（personas
 
 **关于“只读”的含义与界限：** 它能防止金鱼评审者在受支持的 Harness 配置中使用写入、Shell 及其他被禁用的工具。但**这并不意味着评审者无法看到项目文件**：它们可以读取和搜索允许使用的工具所暴露的内容。请勿将评审者预设视为保密隔离边界，并请务必检查向其公开的项目内容。
 
-本集成针对声明的 DSH 版本范围进行了测试；其隔离行为取决于 Harness 对工具限制和子 Agent 派生 API 的具体实现。 [验证指南](VERIFICATION.md) 详细介绍了防护层、测试及其局限性。 [ADAPTATIONS.md](ADAPTATIONS.md) 解释了哪些内容源自 Google，哪些是本软件包新增的内容。
+本集成的原生回放证据覆盖锁定的 DSH 0.2.1-rc.5 Linux 运行时，并不覆盖声明范围内的每个版本；其隔离行为取决于 Harness 对工具限制和子 Agent 派生 API 的具体实现。 [验证指南](VERIFICATION.md) 详细介绍了防护层、测试及其局限性。 [ADAPTATIONS.md](ADAPTATIONS.md) 解释了哪些内容源自 Google，哪些是本软件包新增的内容。
 
 ## 包含的技能
 
@@ -183,8 +185,7 @@ my-project/
 ├── AGENTS.md
 └── docs/
     └── designs/
-        └── webhook-delivery/
-            └── DESIGN.md
+        └── webhook-delivery.md
 ```
 
 产物的保存位置取决于具体技能和项目配置。若要将 EGM 的工作临时产物定向到独立目录，请在项目的 `AGENTS.md` 中添加以下内容：

@@ -135,7 +135,9 @@ def write_identity(root, plugin, tarball, model, surface):
                                     text=True, check=True).stdout.strip())
     package = json.loads((Path(plugin) / "package.json").read_text(encoding="utf-8"))
     dsh = json.loads((RUNTIME / "node_modules/@deepseek-ai/dsh/package.json").read_text(encoding="utf-8"))
-    lock = json.loads((REPO / "upstream.lock.json").read_text(encoding="utf-8"))
+    # The installed package's own lock identifies the candidate. The checkout's
+    # lock could otherwise lend this tarball an unrelated upstream pin.
+    lock = json.loads((Path(plugin) / "upstream.lock.json").read_text(encoding="utf-8"))
     write_json(root / "identity.json", {
         "package_version": package["version"],
         "tarball_sha256": hashlib.sha256(Path(tarball).read_bytes()).hexdigest(),

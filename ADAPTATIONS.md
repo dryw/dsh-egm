@@ -37,10 +37,12 @@ The only authored runtime code is the DeepSeek Harness layer:
   - artifacts are written to the project working directory, not into the package.
 - **`reviewer-host.js`** provides the `egm_reviewer` tool. It starts an in-process `spawn` child with
   the independent `egm-reviewer` agent preset and a depth cap that forbids the child from
-  delegating. It also applies a deny-list restriction at the child's agent scope so no non-read-only global
-  tool is visible to the reviewer.
-- **`reviewer-tools.js`** is mounted inside the `egm-reviewer` preset. It hides every non-read-only
-  global tool and registers a guard that denies any non-allowlisted call as a second layer.
+  delegating. It also applies a deny-list restriction at the child's agent scope that hides
+  non-read-only global tools. A tool published after that filtering can remain visible; the call
+  guard still denies it, so the layers are not redundant.
+- **`reviewer-tools.js`** is mounted inside the `egm-reviewer` preset. It hides the non-read-only
+  global tools present when it is applied and registers a guard that denies any non-allowlisted
+  call; a tool published later can remain visible but the guard still denies it.
   Allowed: `read`, `read_image`, `glob`, `grep`, and the `ops_*` readers.
 - **`cordis.patch.yml`** inserts the two host rows and declares the `egm-reviewer` agent preset,
   whose plugin list composes only a persona, read-only file tools and search tools, compaction, and
@@ -50,6 +52,12 @@ The only authored runtime code is the DeepSeek Harness layer:
 The integration preamble is injected at registration; it is not written into the vendored files.
 Replacing or refreshing the vendored tree therefore never loses harness mechanics, and reading the
 vendored files still shows exactly what upstream ships.
+
+The bundle declares the `egm-reviewer` preset but does not create the host `agentPresets` registry,
+its default preset, or the `spawn` subagent provider. Those remain profile composition. A profile
+such as the Harness `web` one supplies the registry and its `standard` default; a bare SDK profile
+does not, and `egm_reviewer` then fails closed with an actionable error. See
+[ADAPTER-NOTES.md](ADAPTER-NOTES.md#host-prerequisites).
 
 ## Path mapping
 
@@ -120,6 +128,7 @@ file themselves, the documented approach for hosts without registered persona
 agents. The 0.2.4 live run showed pasted personas arrived abridged.
 
 The [Python integration suite](tests/integration/README.md) exercises the
-installed tarball through the public SDK with locked Harness 0.2.1-rc.5 services.
+installed tarball through the public SDK with locked Harness 0.2.1-rc.5 services,
+and checks every packed vendored member against the lock's raw SHA-256 bytes.
 See [VERIFICATION.md](VERIFICATION.md) for how each upstream requirement maps to
 a check, and for current results and limits.
