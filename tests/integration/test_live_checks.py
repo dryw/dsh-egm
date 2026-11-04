@@ -128,6 +128,23 @@ def test_all_stages_dispatched_at_once_fails(tmp_path):
         assert_stage_order(run)
 
 
+def test_review_prompt_without_target_fails(tmp_path):
+    run = synthetic_run(tmp_path)
+    spawn = next(r for r in run["records"] if r.get("callId") == "spawn6")
+    spawn["arguments"]["prompt"] = spawn["arguments"]["prompt"].replace("TargetFile: design_draft.md\n", "")
+    with pytest.raises(AssertionError, match="missing TargetFile line"):
+        checks(run)
+
+
+def test_brainstorm_prompt_may_omit_the_target_line(tmp_path):
+    # Seen in a live run: brainstorm prompts carried Persona and Mode but no TargetFile line.
+    run = synthetic_run(tmp_path)
+    spawn = next(r for r in run["records"] if r.get("callId") == "spawn5")
+    spawn["arguments"]["prompt"] = f"Persona: {PERSONA}\nMode: BRAINSTORM\n"
+    stages = {"5": [], **{str(n): [f"C{n}"] for n in range(6, 10)}}
+    assert_required_reads(run, stages)
+
+
 def test_brainstorm_prompt_may_name_no_target(tmp_path):
     run = synthetic_run(tmp_path)
     spawn = next(r for r in run["records"] if r.get("callId") == "spawn5")

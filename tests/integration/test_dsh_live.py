@@ -392,7 +392,9 @@ def assert_required_reads(run, stages):
     for d in dispatches(run):
         persona = envelope(d["prompt"], "Persona")
         assert persona, "missing Persona line"
-        assert envelope(d["prompt"], "TargetFile"), "missing TargetFile line"
+        # ADAPTER-NOTES.md: TargetFile is part of the REVIEW envelope only.
+        if envelope(d["prompt"], "Mode") == "REVIEW":
+            assert envelope(d["prompt"], "TargetFile"), "missing TargetFile line"
         agents = os.path.realpath(run["plugin"] / "agents") if run["plugin"] else None
         persona_path = resolve(run, persona)
         assert (persona_path.startswith(agents + os.sep) if agents
