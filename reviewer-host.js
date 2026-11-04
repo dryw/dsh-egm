@@ -19,6 +19,9 @@ export const inject = ['tools', 'subagents', 'agents']
 
 const REVIEWER_PRESET = 'egm-reviewer'
 
+/** Exact refusal a parent gets when it tries to continue a finished or running reviewer. */
+export const REUSE_DENIED = 'EGM Goldfish reviewers are single-use: do not message or resume a reviewer. Start a fresh egm_reviewer with the full prompt instead.'
+
 /** The tool's model-facing schema: a description and a self-contained prompt. */
 const PARAMETERS = {
   type: 'object',
@@ -64,6 +67,12 @@ function reviewerSupportError(ctx) {
  */
 export function apply(ctx) {
   const presets = ctx.get('agentPresets')
+  // Upstream: "Do not fork the conversation or resume a previous reviewer." DSH starts
+  // every local child as continuable, so refuse follow-up messages to reviewers here.
+  const reviewers = new Set()
+  ctx.effect(() => ctx.tools.guard((exec) => (exec.name === 'send_message' && reviewers.has(exec.arguments?.agent_id)
+    ? REUSE_DENIED
+    : undefined)))
   ctx.effect(() => ctx.on('agent/created', ({ agent }) => {
     if (presets === undefined) return
     try {
@@ -115,6 +124,7 @@ export function apply(ctx) {
         signal: exec.signal,
         delivery: 'parent',
       })
+      reviewers.add(activation.childId)
       return { kind: 'activation', subagentId: activation.childId }
     },
   }

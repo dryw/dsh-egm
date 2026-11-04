@@ -102,10 +102,11 @@ separately.
   `reasoningEffort: high`, tarball from `de5a022`): 25 of 25 passed. Install,
   both isolation tests, reviewers (15), stage order, required reads, skill
   delivery and upstream's unchanged assertions all pass; the final design is
-  byte-identical to `design_draft.md`, which every stage reviewed. Notes for the
-  record: the parent used `send_message` once to ask a brainstorm reviewer to
-  resend a truncated finding, so that reviewer ran a second turn on a
-  parent-written message; and it kept editing `design_draft.md` for about 20
-  seconds after the stage 5 reviewer had read it. The manual interactive run is
-  still pending. [Historical results](E2E-VERIFICATION.md)
+  byte-identical to `design_draft.md`, which every stage reviewed. Two notes
+  from that run are now failures: the parent used `send_message` to make a
+  brainstorm reviewer run a second turn, and it edited `design_draft.md` while
+  the stage 5 reviewer was running. The adapter now refuses follow-up messages
+  to reviewers (proven in keyless replay), the preamble forbids editing the
+  document during a stage, and the checks fail both cases, so this run no longer
+  counts. A new paid run and the manual interactive run are pending. [Historical results](E2E-VERIFICATION.md)
   do not establish acceptance of the current package.

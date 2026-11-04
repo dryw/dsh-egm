@@ -160,6 +160,8 @@ test('the preamble keeps the DSH mechanics and names the persona by path', () =>
   assert.ok(!preamble.includes('persona body'), 'reviewers read their persona; the parent does not paste it')
   // Upstream docs/claude.md states the same rule after a stage-order failure.
   assert.ok(preamble.includes('Keep review stages 5, 6, 7, 8 and 9 sequential.'))
+  assert.ok(preamble.includes("Do not edit the document under review while any reviewer of the current stage is running."))
+  assert.ok(preamble.includes('Goldfish reviewers are single-use'))
   assert.ok(preamble.includes('Uninterrupted mode skips human checkpoints, not these stage dependencies.'))
   // Context-selection contracts, moved from the retired upstream-pin suite.
   for (const phrase of ['explicitly empty supplemental list', 'Stage 6 comprehension reads only the design',

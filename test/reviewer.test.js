@@ -17,6 +17,7 @@ function createReviewerContext(options = {}) {
   const registeredTools = []
   const activations = []
   const createdListeners = []
+  const guards = []
   const context = {
     effects: [],
     effect(callback) {
@@ -56,9 +57,13 @@ function createReviewerContext(options = {}) {
         registeredTools.push(definition)
         return () => {}
       },
+      guard(check) {
+        guards.push(check)
+        return () => {}
+      },
     },
   }
-  return { context, registeredTools, activations, createdListeners }
+  return { context, registeredTools, activations, createdListeners, guards }
 }
 
 test('the reviewer plugin registers the egm_reviewer tool and starts preset children', async () => {
@@ -93,6 +98,17 @@ test('the reviewer plugin registers the egm_reviewer tool and starts preset chil
   assert.deepEqual(empty.activations[0].request.prompt, [{type:'text',text:prompt}])
   assert(!JSON.stringify(empty.activations[0].request.prompt).includes('PARENT_SENTINEL'))
 
+})
+
+test('a started reviewer cannot be messaged or resumed', async () => {
+  const { context, registeredTools, guards } = createReviewerContext()
+  reviewer.apply(context)
+  const guard = (args) => guards.map((check) => check({ name: 'send_message', arguments: args })).find(Boolean)
+  assert.equal(guard({ agent_id: 'child-reviewer-1', message: 'resend' }), undefined, 'unknown ids are not reviewers yet')
+  await registeredTools[0].execute({ description: 'r', prompt: 'Persona: /p/agents/style.md' }, { agent: { id: 'parent' } })
+  assert.equal(guard({ agent_id: 'child-reviewer-1', message: 'resend' }), reviewer.REUSE_DENIED)
+  assert.equal(guard({ agent_id: 'other-child', message: 'hi' }), undefined, 'other subagents keep send_message')
+  assert.equal(guards.map((check) => check({ name: 'read', arguments: {} })).find(Boolean), undefined)
 })
 
 test('the reviewer tool fails closed when reviewer support is missing', async () => {

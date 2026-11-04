@@ -169,6 +169,68 @@
         {
           "type": "block-start",
           "index": 0,
+          "blockType": "tool-call"
+        },
+        {
+          "type": "tool-call-delta",
+          "index": 0,
+          "id": "isolation-reuse",
+          "name": "send_message",
+          "argumentsDelta": "{\"agent_id\": \"{{fromRequest:started read-only EGM reviewer ([0-9a-f-]+)}}\", \"message\": \"Resend your last finding.\"}"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "tool-call",
+            "id": "isolation-reuse",
+            "name": "send_message",
+            "arguments": "{\"agent_id\": \"{{fromRequest:started read-only EGM reviewer ([0-9a-f-]+)}}\", \"message\": \"Resend your last finding.\"}"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "tool-calls"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
+          "blockType": "text"
+        },
+        {
+          "type": "text-delta",
+          "index": 0,
+          "text": "PARENT_ACK"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "text",
+            "text": "PARENT_ACK"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "stop"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
           "blockType": "text"
         },
         {

@@ -278,6 +278,8 @@ def child_traces(run):
         trace = run["sessions"][child]
         assert trace[0].get("isSeeded") is False and trace[0].get("delegationDepth") == 1
         assert complete(trace), "Child has no successful native completion"
+        # Reviewers are single-use: a second turn means the parent resumed one.
+        assert sum(r.get("type") == "turn/end" for r in trace) == 1, "reviewer resumed for a second turn"
         assert any(r.get("type") == "subagent/descriptor" and r["data"].get("provider") == "spawn" for r in trace)
         assert any(r["kind"] == "agent" and r["sessionId"] == child and r["preset"] == "egm-reviewer" for r in run["records"])
         assert any(r["kind"] == "request" and r["sessionId"] == child for r in run["records"])
@@ -337,9 +339,11 @@ def assert_stage_order(run):
     """Every stage-N reviewer finishes before report N exists, and stage N+1 starts after it."""
     finished = row_times(run, "tool/result")
     writes = {name: [] for name in REPORTS}
+    edits = []  # (time, resolved path) of every successful parent write or edit
     for r in run["records"]:
         if r["kind"] == "tool" and r["sessionId"] == run["parent"] and r["name"] in ("write", "edit") \
                 and not r["result"]["isError"] and r["callId"] in finished:
+            edits.append((finished[r["callId"]], resolve(run, r["arguments"]["file_path"])))
             for name in REPORTS:
                 if resolve(run, r["arguments"]["file_path"]) == resolve(run, name):
                     writes[name].append(finished[r["callId"]])
@@ -365,10 +369,19 @@ def assert_stage_order(run):
             stages[str(index + 5)].append(d["child"])
     for index, stage in enumerate(stages):
         assert stages[stage], f"stage {stage} has no reviewer dispatched after report {int(stage) - 1}"
+    by_child = {d["child"]: d for d in dispatches(run)}
     for index, stage in enumerate(stages):
+        ends = []
         for child in stages[stage]:
-            ends = [r["time"] for r in run["sessions"][child] if r.get("type") == "turn/end"]
-            assert ends and max(ends) <= first[index], f"stage {stage} reviewer finished after its report"
+            child_ends = [r["time"] for r in run["sessions"][child] if r.get("type") == "turn/end"]
+            assert child_ends and max(child_ends) <= first[index], f"stage {stage} reviewer finished after its report"
+            ends += child_ends
+        # Reviewers must all see the same document: no edits to it while they run.
+        start = min(by_child[child]["time"] for child in stages[stage])
+        targets = {resolve(run, path) for child in stages[stage] for path in named_paths(by_child[child]["prompt"], "TargetFile")}
+        for when, path in edits:
+            assert not (path in targets and start < when < max(ends)), \
+                f"{os.path.basename(path)} edited while stage {stage} reviewers were running"
     return stages, remediation
 
 

@@ -95,6 +95,15 @@ def test_adapter(installed_plugin, tmp_path):
             + '" tool is not available in this reviewer context.')
     assert all(path.read_bytes() == baseline for path in sentinels)
 
+    # The parent's scripted follow-up to the reviewer is refused, so the child keeps one turn.
+    reuse = [r for r in run_result["records"] if r["kind"] == "tool" and r["name"] == "send_message"]
+    assert len(reuse) == 1 and reuse[0]["sessionId"] == run_result["parent"]
+    assert reuse[0]["result"]["isError"]
+    assert reuse[0]["result"]["error"]["message"] == (
+        "EGM Goldfish reviewers are single-use: do not message or resume a reviewer. "
+        "Start a fresh egm_reviewer with the full prompt instead.")
+    assert len([r for r in trace if r.get("type") == "turn/end"]) == 1
+
     seen = lambda run, session: probe in json.dumps(
         [r for r in run["records"] if r["kind"] == "request" and r["sessionId"] == session])
     parent_seen = seen(control, control["parent"]) or seen(run_result, run_result["parent"])

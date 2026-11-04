@@ -90,6 +90,14 @@ def test_missing_lifecycle_event_fails(tmp_path, method):
         child_traces(run)
 
 
+def test_resumed_reviewer_fails(tmp_path):
+    # Seen in a live run: the parent messaged a finished reviewer, which ran a second turn.
+    run = synthetic_run(tmp_path)
+    run["sessions"]["C5"].append(dict(run["sessions"]["C5"][-1]))
+    with pytest.raises(AssertionError, match="reviewer resumed for a second turn"):
+        child_traces(run)
+
+
 def test_terminal_run_needs_native_completion(tmp_path):
     run = synthetic_run(tmp_path)
     run["notifications"] = []
@@ -186,6 +194,18 @@ def test_status_only_difference_ignores_template_spacing(tmp_path):
     assert status_only_difference(tmp_path)
     (tmp_path / "docs/designs/line-count.md").write_text("# T\n\n*   **Status:** Proposed\n\nOther\n", encoding="utf-8")
     assert not status_only_difference(tmp_path)
+
+
+def test_editing_the_target_during_a_stage_fails(tmp_path):
+    # Seen in a live run: design_draft.md was edited after the stage 5 reviewer started.
+    run = synthetic_run(tmp_path)
+    run["records"].append({"kind": "tool", "sessionId": "P", "callId": "edit-draft", "name": "edit",
+                           "arguments": {"file_path": "design_draft.md"}, "result": {"isError": False}})
+    run["sessions"]["P"].append({"type": "tool/result", "time": 0.5, "data": {"message": {"toolCallId": "edit-draft"}}})
+    with pytest.raises(AssertionError, match="design_draft.md edited while stage 5 reviewers were running"):
+        assert_stage_order(run)
+    run["sessions"]["P"][-1]["time"] = 3  # after report 5, before stage 6: remediation, allowed
+    assert_stage_order(run)
 
 
 def test_missing_report_write_fails(tmp_path):
