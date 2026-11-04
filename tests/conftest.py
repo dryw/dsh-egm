@@ -1,4 +1,4 @@
-"""Shared installation lives with the SDK runner; no custom workflow engine."""
+"""Expose the integration suite and its module-scoped install fixture to every test."""
 import sys
 from pathlib import Path
 

@@ -6,12 +6,9 @@ requirement to the dsh-egm check that answers it, states each limit, and is the
 harness test record. Host mechanics, manifest mapping and the composed
 isolation layers live in [docs/dsh.md](docs/dsh.md).
 
-The current tree is the **uncommitted Phase C1b candidate** (branch
-`restructure`, nothing committed): the C1a relocation plus the opt-in host
-prerequisite patch. Acceptance is pending: no workflow, human-pause or
-upstream-support result has been re-established for this candidate. The Phase M
-and C1a figures below are kept as history; the keyless checks for this candidate
-are under "Phase C1b checkpoint".
+Status: free checks pass on the current tree. Workflow, human-pause and
+upstream-support acceptance for the next release are **pending**. Every run,
+passed or failed, is a row in the [harness test record](#harness-test-record).
 
 Sources at that commit: A = [`docs/designs/additional-harnesses.md`](https://github.com/google/elephant-goldfish-model/blob/113a3afc44e8f4f54722d7150d5701f65cc8ef7f/docs/designs/additional-harnesses.md)
 ("Architecture and data flow", "Validation and release gates");
@@ -23,10 +20,111 @@ T = [`TESTING.md`](https://github.com/google/elephant-goldfish-model/blob/113a3a
 | Layer | Command | Cost |
 | --- | --- | --- |
 | Node suite | `npm test` (quoted `tests/unit/*.test.js`; CI: Linux and Windows) | Free |
+| One Node suite | `node --test "tests/unit/<name>.test.js"` | Free |
+| Upstream drift check | `node adapters/dsh/check_upstream.mjs` (repository-only, manual; see [upstream drift check](#upstream-drift-check)) | Free |
+| Raw-Git provenance and extraction | offline `EGM_SOURCE`/`git show` procedure under [raw-Git provenance and extraction](#raw-git-provenance-and-extraction) | Free |
 | Keyless DSH tests | `DSH_EGM_LIVE=0 pytest tests/integration tests/unit/test_dsh_traces.py -q` (CI: Linux) | Free |
 | Packed-file check | CI pack check: `npm pack --dry-run` compared with `package.json` `files` | Free |
-| Paid DSH tests | `DSH_EGM_LIVE=1 pytest tests/integration -q`, see [LIVE-README](tests/integration/LIVE-README.md) | API credit |
-| Manual interactive run | steps in [LIVE-README](tests/integration/LIVE-README.md) | API credit |
+| Paid DSH tests | `DSH_EGM_LIVE=1 pytest tests/integration -q`, see [paid live runs](#paid-live-runs) | API credit |
+| Manual interactive run | steps under [manual interactive run](#manual-interactive-run) | API credit |
+
+## Node suite
+
+Zero-dependency `node:test` suite that gates the package before publishing. Most
+of the package is vendored verbatim from upstream EGM; the suite therefore checks
+that the vendored tree stays byte-faithful, that the DeepSeek Harness integration
+layer injects the right preamble and reviewer isolation, and that the bundle
+manifest, locale and icon satisfy the DSH plugin contract. The separate keyless
+DSH suite below checks the adapter in a real Harness on Linux/Node 24/Python
+3.12, including the trace regressions in `tests/unit/test_dsh_traces.py`. It does
+not replace this JavaScript suite or add dependencies to its unit/content
+checks; install its locked dependencies separately.
+
+Requirements: Node.js **>= 22** (locally validated on Node 24); no `npm install`
+is needed, because the suite imports only `node:` builtins and the package's own
+files. Run from the package root (the directory containing `package.json`).
+
+```sh
+# The package script: node --test "tests/unit/*.test.js"
+npm test
+
+# Explicit glob; quote it so Node, not the shell, expands it
+node --test "tests/unit/*.test.js"
+
+# One suite while working
+node --test "tests/unit/dsh_manifest.test.js"
+```
+
+> **Note:** `node --test tests/unit/` is not a directory argument on Node 24. The
+> positional arguments after `--test` are glob patterns, and `tests/unit/` matches
+> the directory itself, so Node tries to execute it as a test file and fails. Use
+> the quoted glob above.
+
+`node --test` also discovers the suites when run with no arguments from the
+package root. Read the current pass/fail/skip count from the run output rather
+than a recorded total; the only expected skip is the `EGM_SOURCE`-gated Git
+comparison. Check against another DSH runtime by setting `DSH_RUNTIME_VERSION`
+(default `0.2.1-rc.5`, the version the `engines.dsh` range is validated against):
+
+```sh
+DSH_RUNTIME_VERSION=0.2.2 npm test
+```
+
+PowerShell: `$env:DSH_RUNTIME_VERSION='0.2.2'; npm test`.
+
+To compare every locked vendored file with the pinned upstream Git object, point
+`EGM_SOURCE` at an upstream checkout:
+
+```sh
+EGM_SOURCE=/path/to/upstream-checkout npm test
+```
+
+PowerShell: `$env:EGM_SOURCE='C:\path\to\upstream-checkout'; npm test`.
+
+### What the Node suite checks
+
+| Suite | Contract |
+|---|---|
+| `tests/unit/dsh_manifest.test.js` | `package.json` identity (`main`/`exports["."]` target the relocated `adapters/dsh/skills-host.js`); every public export key is preserved and retargeted under `adapters/dsh/`; `dsh.bundle.patch` is `./adapters/dsh/cordis.patch.yml` and inserts this package; `engines.dsh` admits the running DSH; declared `files` entries are non-empty, unique and exist; every required runtime, guide and provenance file is packed; repository-only trees and files (tests, examples, `docs/testing`, `scripts`, `.github`, `.dev`, the manual checker, the diagram renderer, D2 sources and any `*.EGM.md`) are never packed; the plain-JS entry imports only `node:` builtins and relative modules, so no install-time build is needed. |
+| `tests/unit/dsh_engines.test.js` | `engines.node` is bounded and admits the CI-tested Node 22 and 24 majors; `engines.dsh` admits the recorded `0.2.1-rc.5` runtime, later `0.2.2` prereleases and the final `0.2.2` under DSH's `includePrerelease` policy, while refusing `0.3.0`. |
+| `tests/unit/dsh_skill_metadata.test.js` | The seven vendored `skills/<dir>/SKILL.md` files exist; YAML frontmatter parses (including upstream's folded `>-` descriptions, which the adapter folds to one line); `name` is kebab-case and equals the directory; `description` is usable and at most 500 characters after folding; `license` stays `Apache-2.0`; invocation flags are literal booleans. |
+| `tests/unit/dsh_resources.test.js` | The 19 vendored shared paths exist (upstream resources, skill-local `references/`, and `agents/*.md` personas); every `resources/...` path mentioned in skill or agent Markdown resolves against the package root; references use forward slashes; agent personas are non-empty Markdown. |
+| `tests/unit/dsh_skills.test.js` | `adapters/dsh/skills-host.js` loads as a plain ES module that re-exports the integration layer; `apply()` registers all seven skills via `ctx.effect`/`ctx.skills.register`; each registration starts with the `<dsh_integration>` preamble, ends with the verbatim upstream body, and uses the package root as its resource base; the preamble keeps the DSH mechanics, names each reviewer's persona by a `Persona:` path, and keeps the context-selection contracts; the parser accepts every bundled `SKILL.md`, folds upstream block scalars, rejects YAML lists, and a malformed bundled skill in a temporary package fails activation instead of shrinking the install. |
+| `tests/unit/dsh_reviewer.test.js` | The `egm_reviewer` tool from `adapters/dsh/reviewer-host.js` tells the model to name the persona file rather than paste it, starts exactly one `spawn` activation in the `egm-reviewer` preset with a depth cap of 1; it fails closed without the preset service, a `spawn` provider, or the declared preset; reviewer agents get a deny-list restriction that hides the non-read-only tools known at that point; the guard from `adapters/dsh/reviewer-tools.js` denies every non-allowlisted call (including a tool published later) and keeps `read`, `read_image`, `glob`, `grep` and the read-only `ops_*` readers. |
+| `tests/unit/dsh_metadata.test.js` | `adapters/dsh/locale/en.json` and `adapters/dsh/locale/zh.json` declare non-empty `meta.title` and `meta.description`; locale filenames are language ids; `adapters/dsh/icon.svg` is valid SVG under DSH's 256 KiB limit and is reachable through `exports "./icon"`. |
+| `tests/unit/dsh_upstream.test.js` | The one content gate. `upstream.lock.json` pins the upstream repository, commit and the 26 files in `adapters/dsh/check_upstream.mjs`; every shipped vendored file matches its SHA-256 as LF-normalized text; every git-tracked file under `skills/`, `agents/` and `resources/` has a lock entry and every entry is tracked; `files` ships every adapted file; with `EGM_SOURCE=<checkout>` every entry equals `git show <commit>:<path>`. Byte-identical files need no further upstream content tests. The Python `test_install` adds the literal check: it hashes each packed member's raw bytes and compares that digest with the lock's recorded SHA-256, so a newline-representation change cannot pass both gates. |
+
+`tests/unit/dsh_helpers.js` holds the shared readers (frontmatter parser, file
+walker, `files` glob matcher and a small SemVer range checker that mirrors DSH's
+`includePrerelease` policy). `tests/unit/fixtures/` holds the stand-in skills the
+parser tests use.
+
+### Packaging split
+
+Only the two rendered diagrams (`docs/assets/workflow.svg` and
+`docs/assets/protocol.svg`) are shipped. Their D2 sources, the diagram README and
+the renderer (`adapters/dsh/render_diagrams.mjs`) stay in the repository, as do
+the manual upstream checker and every test tree; the packed-file checks in
+`dsh_manifest.test.js` enforce that split. Host mechanics are documented in
+[docs/dsh.md](docs/dsh.md); the requirement map and the harness test record are
+this page.
+
+### Upstream test parity
+
+Upstream's Python suite is not runnable against this package layout, so its
+offline intents are covered by equivalent checks here:
+
+| Upstream test intent | Covered by |
+|---|---|
+| Skill frontmatter schema | `tests/unit/dsh_skill_metadata.test.js` (including folded block scalars) |
+| Relative link / reference integrity | `tests/unit/dsh_resources.test.js` (vendored paths and skill-local `references/`) |
+| Portable plugin manifest and shared metadata consistency | `tests/unit/dsh_manifest.test.js`, `tests/unit/dsh_metadata.test.js` |
+| Marketplace/component path checks | not applicable: this bundle ships no marketplace or component paths; the DSH manifest and patch rows are checked instead |
+| Read-hook tests (POSIX shell) | not applicable: the package installs no hooks |
+| Trace-based harness integration tests | the [keyless DSH suite](#keyless-suite-setup): keyless replay covers install identity, reviewer isolation, read-only enforcement, skill delivery and host-injected context; opt-in live tests cover the workflow. The [requirement map](#requirement-map) maps each upstream requirement to its check |
+
+The maintained Python/native replay gate below uses the public SDK and the
+locked native replay runtime.
 
 ## Keyless suite setup
 
@@ -37,14 +135,256 @@ root:
 python3.12 -m venv /path/to/venv
 /path/to/venv/bin/pip install -r tests/integration/dsh_requirements.txt
 npm ci --prefix tests/integration/dsh-ci
-/path/to/venv/bin/python -m pytest tests/integration tests/unit/test_dsh_traces.py -q
+DSH_EGM_LIVE=0 /path/to/venv/bin/python -m pytest tests/integration tests/unit/test_dsh_traces.py -q
 ```
 
 `tests/integration/dsh-ci/` holds the locked Node runtime package pins;
 `tests/integration/dsh_requirements.txt` holds the Python pins. Set
 `EGM_TEST_RUNTIME` to point at a different installation of the locked Node
 runtime (a Linux-local directory under WSL). The paid tests stay skipped unless
-`DSH_EGM_LIVE=1`. `npm test` runs the separate Node suite.
+`DSH_EGM_LIVE=1`; `npm test` runs the separate Node suite. CI runs the suite with
+paid tests disabled.
+
+What it checks:
+
+- `tests/integration/test_dsh.py`: `test_install` compares every packed file with
+  the installed copy and hashes every locked vendored archive member's literal
+  bytes, comparing the digest with the lock (no newline normalization);
+  `test_adapter` checks skill delivery, parent controls, fresh-context isolation,
+  reads, write/shell guard denials, child completion, and records whether a
+  project `AGENTS.md` reaches the parent and the reviewer
+  (`controls/host-context.json`).
+- `tests/unit/test_dsh_traces.py`: synthetic negative cases showing each evidence
+  check can fail, including malformed JSONL and rejection of parent-only reviewer
+  claims. Keyless regressions also prove `write_identity` reads the installed
+  package's own upstream pin and that the archive byte check rejects
+  CRLF-rewritten bytes.
+- `test_dsh_live.py`: two paid tests, skipped unless explicitly enabled, plus the
+  `check` and `profile` commands described under [paid live runs](#paid-live-runs)
+  and [manual interactive run](#manual-interactive-run).
+
+`run_dsh` and the `profile` command pass the installed package's
+`adapters/dsh/agent-presets.patch.yml` (the opt-in D8 prerequisite patch) as an
+additional patch, so keyless and paid runs load the same file a user applies.
+`profile_rows` keeps only the observer, session-persistence and replay-provider
+rows, which are instrumentation rather than prerequisites. The keyless
+`test_missing_agent_presets` omits the patch and asserts the exact fail-closed
+error. See [host prerequisites and current limits](#host-prerequisites-and-current-limits)
+and [docs/dsh.md](docs/dsh.md).
+
+Evidence is retained under pytest's temporary directory: requests and tool
+results, notifications, native Sessions and artifacts. Pass a fresh `--basetemp`
+path to keep it; pytest clears an existing basetemp. Fixtures use native replay
+entries and native-writer Session seeds. Do not invent lifecycle events;
+regenerate seeds with the pinned runtime and validate them through its
+`parseSessionLog` and `deriveReplayScript` APIs before replacing them.
+
+## Upstream drift check
+
+The upstream checker is repository-only tooling. The npm package does not ship
+`adapters/dsh/check_upstream.mjs` or `adapters/dsh/render_diagrams.mjs`;
+`package.json` `files` enumerates the shipped paths explicitly, and the CI pack
+check rejects either checker or renderer if it leaks into a tarball.
+
+`upstream.lock.json` pins the upstream commit and, for every vendored upstream
+file this package ships, the SHA-256 of its repository text with LF line endings.
+The Node test compares the shipped files as LF-normalized text; the Python
+archive check hashes each packed member's raw bytes and compares that digest with
+the recorded value. The checker compares that pin with the upstream default
+branch and reports which vendored files a re-adaptation must touch. It is a manual
+maintainer step, not part of the daily test run; the daily workflow runs the check
+and surfaces drift through its CI status and logs, and never rewrites the lock or
+re-adapts content automatically.
+
+```sh
+# Check the upstream default branch against the lock (exit 0 clean, 1 drift, 2 error)
+node adapters/dsh/check_upstream.mjs
+
+# Check a specific branch, tag or commit; print the machine-readable report
+node adapters/dsh/check_upstream.mjs --ref <sha-or-branch> --json
+
+# Refresh upstream.lock.json for the checked commit (uses GitHub raw file contents)
+node adapters/dsh/check_upstream.mjs --update-lock
+
+# Offline: refresh the lock from a local upstream clone at its current HEAD
+node adapters/dsh/check_upstream.mjs --update-lock --source ../egm-source
+```
+
+- `GITHUB_TOKEN` (or `GH_TOKEN`) authenticates the GitHub API calls; the anonymous
+  limit is 60 requests/hour and the drift report needs two or three calls.
+  `GITHUB_API_URL` overrides the API base (GitHub Enterprise).
+- `--update-lock` is a human step: the daily workflow only reports drift, it never
+  rewrites the lock or re-adapts content automatically. It also never moves the pin
+  silently — run it against the `--ref` you checked.
+- When upstream changed but none of the mapped files changed, the script still
+  exits 1 (upstream moved) but says no re-adaptation is required; refresh the lock.
+- To adapt a newly vendored upstream file, add `[upstreamPath, adaptedPath]` to
+  `ADAPTED_FILES` in `adapters/dsh/check_upstream.mjs`, run
+  `node adapters/dsh/check_upstream.mjs --update-lock --source <checkout>`, and
+  keep the script change and `upstream.lock.json` in the same change;
+  `tests/unit/dsh_upstream.test.js` fails if the two drift apart.
+
+The diagram renderer is repository-only in the same way; its sources, assets and
+theming notes are in [docs/assets/README.md](docs/assets/README.md).
+
+## Raw-Git provenance and extraction
+
+The live test follows the two scenarios in upstream `test_codex.py` at the pinned
+commit. DSH supplies startup, native skill invocation and trace decoding;
+`tests/integration/upstream_contract.py` retains the artifact and reviewer-count
+assertions. Replay tests exercise host mechanics, not model behavior.
+
+The canonical prompt and the extracted assertions are pinned to raw Git bytes,
+not to a working copy. `tests/integration/fixtures/dsh_line_count_provenance.json`
+records the commit, source path, Git blob SHA-1, prompt SHA-256 and prompt byte
+count. The procedures below are offline, free and invoke no model. Ordinary CI
+runs neither; record their result for a candidate explicitly.
+
+First, extract and verify the host-neutral upstream assertions from raw Git bytes,
+in a Linux shell with an upstream clone that contains the pinned commit:
+
+```sh
+# e.g. C:/Users/dryw/Projects/dsh-egm/.dev/upstream-clone on Windows
+export EGM_SOURCE=/path/to/upstream-clone
+mkdir -p .dev/acceptance
+git -C "$EGM_SOURCE" show 113a3afc44e8f4f54722d7150d5701f65cc8ef7f:tests/integration/test_codex.py > .dev/acceptance/upstream-test-codex-lf.py
+python3.12 tests/integration/extract_upstream_contract.py .dev/acceptance/upstream-test-codex-lf.py --check
+```
+
+Second, the full provenance checkpoint. Point `EGM_SOURCE` at a clone that
+contains the pinned commit (for example the main checkout's
+`.dev/upstream-clone`). It compares the fixture's blob, prompt and extraction
+records with raw Git objects, and checks every lock hash against its pinned Git
+object. It records `.dev/docs/provenance_check.json`; a mismatch records failure
+and exits nonzero. `.dev/` is private, git-ignored scratch.
+
+```sh
+export EGM_SOURCE=/path/to/upstream-clone   # clone containing the pinned commit
+python3.12 - <<'PY'
+import ast, hashlib, json, os, subprocess, sys, tempfile
+from pathlib import Path
+repo = Path.cwd()
+clone = Path(os.environ["EGM_SOURCE"])
+integration = repo / "tests/integration"
+meta = json.loads((integration / "fixtures/dsh_line_count_provenance.json").read_text(encoding="utf-8"))
+prompt_path = integration / "fixtures/dsh_line_count_prompt.txt"
+lock = json.loads((repo / "upstream.lock.json").read_text(encoding="utf-8"))
+out = repo / ".dev/docs/provenance_check.json"
+out.parent.mkdir(parents=True, exist_ok=True)
+report = {"result": "fail"}
+try:
+    assert meta["source_commit"] == lock["commit"]
+    raw = subprocess.check_output(["git", "-C", str(clone), "show", meta["source_commit"] + ":" + meta["source_path"]])
+    blob = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+    assert blob == meta["source_git_blob_sha1"]
+    sys.path.insert(0, str(integration))
+    from extract_upstream_contract import extract
+    assert (integration / "upstream_contract.py").read_bytes() == extract(raw).encode("utf-8")
+    with tempfile.TemporaryDirectory(prefix="egm-provenance-") as temporary:
+        source = Path(temporary) / "test_codex.py"
+        source.write_bytes(raw)
+        subprocess.run([sys.executable, str(integration / "extract_upstream_contract.py"), str(source), "--check"], check=True)
+    fn = next(n for n in ast.walk(ast.parse(raw)) if isinstance(n, ast.FunctionDef) and n.name == meta["source_function"])
+    assignments = [n for n in ast.walk(fn) if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == meta["source_variable"] for t in n.targets)]
+    assert len(assignments) == 1
+    prompt = ast.literal_eval(assignments[0].value).encode("utf-8")
+    digest = hashlib.sha256(prompt).hexdigest()
+    assert digest == meta["prompt_sha256"] and len(prompt) == meta["prompt_bytes"]
+    assert prompt == prompt_path.read_bytes()
+    for entry in lock["files"]:
+        original = subprocess.check_output(["git", "-C", str(clone), "show", lock["commit"] + ":" + entry["upstream"]])
+        assert hashlib.sha256(original).hexdigest() == entry["sha256"], entry["upstream"]
+    report.update(result="pass", commit=lock["commit"], source_blob=blob, prompt_sha256=digest, vendor_hashes=len(lock["files"]))
+except Exception as error:
+    report["error"] = type(error).__name__ + ": " + str(error)
+    raise
+finally:
+    out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+print(json.dumps(report))
+PY
+```
+
+The checkpoint verifies that the fixture's source commit equals the lock commit;
+the pinned source blob's SHA-1 equals the fixture's; the extracted
+`upstream_contract.py` bytes equal what the extractor regenerates, including its
+`--check` drift assertion; the prompt AST assignment, UTF-8 bytes, byte count and
+SHA-256 equal the fixture and the prompt file; and all 26 lock hashes equal the
+bytes of their pinned Git objects.
+
+Optional network probe, distinct from the offline check above:
+`python3.12 tests/integration/verify_dsh_prompt.py` fetches the pinned source from
+`raw.githubusercontent.com` and repeats the blob, prompt byte-length and SHA-256
+checks. It is keyless and invokes no model.
+
+## Paid live runs
+
+Paid. Run in WSL from the repository root after the keyless setup above. Pack a
+fixed tarball first and note the commit it came from.
+
+```sh
+export EGM_TEST_RUNTIME=/home/dryw/.cache/dsh-egm-linux-runtime
+export PATH=/home/dryw/.cache/dsh-egm-node24/node_modules/.bin:$EGM_TEST_RUNTIME/node_modules/.bin:/usr/bin:/bin
+export DSH_EGM_TARBALL="$PWD/.dev/acceptance/dsh-egm-<version>.tgz"
+export DSH_EGM_SOURCE_SHA=<commit the tarball was packed from>
+export DSH_EGM_MODEL=deepseek-flash
+read -rsp 'DeepSeek API key: ' DEEPSEEK_API_KEY; echo
+export DEEPSEEK_API_KEY
+DSH_EGM_LIVE=1 /home/dryw/.cache/dsh-egm-acceptance-venv/bin/python -m pytest tests/integration -s -q --basetemp "$HOME/.cache/dsh-egm-live-$(date +%s)"
+unset DEEPSEEK_API_KEY
+```
+
+Replace the cached runtime, Node 24 bin directory and acceptance venv with your
+own paths; `EGM_TEST_RUNTIME` and `tests/integration/dsh-ci/` are described in the
+keyless setup above. With `-s`, each run prints a timestamped line when a reviewer
+starts or finishes and when the parent writes or edits a file, so a long review
+shows its stage.
+
+Paid runs enable thinking with `reasoningEffort: high` (override with
+`DSH_EGM_REASONING=low|high|max`). Upstream's Codex test runs at medium reasoning;
+DeepSeek offers no medium, and high is its default when thinking is on.
+`identity.json` records the effort used.
+
+This runs the whole suite against the tarball, so install, isolation and
+workflow are separate outcomes. It spends API credit: 32,768 output tokens per
+response, a 20-minute SDK wait, no provider retries and no total cap. Keep native
+logs private; the client closes in `finally`.
+
+The workflow test sends the unchanged upstream line-count prompt after one block
+of native slash invocations of the three skills. Each paid test writes
+`identity.json` before the model runs; its upstream pin comes from the installed
+package's own `upstream.lock.json`, so an explicitly selected tarball records the
+pin it was packed from rather than this checkout's. The workflow test writes
+`checks.json` with every check's result, then fails if any check failed. See
+[Live results](#live-results) for how to read it and for the `check` command that
+inspects retained or manual evidence without changing it.
+
+## Manual interactive run
+
+Upstream requires a real human approval pause. Use the same tarball.
+
+1. Prepare a disposable profile with logs, observer and identity record:
+
+   ```sh
+   python tests/integration/test_dsh_live.py profile "$HOME/.cache/dsh-egm-manual-$(date +%s)" \
+     --tarball "$DSH_EGM_TARBALL" --source-sha "$DSH_EGM_SOURCE_SHA" --model "$DSH_EGM_MODEL"
+   ```
+
+   It installs the tarball into a `tui` profile and prints the command that starts
+   the terminal UI with **two** `--patch` options: the run's `profile.patch.json`
+   (session logs, observer, model provider) and the installed package's opt-in
+   `adapters/dsh/agent-presets.patch.yml` prerequisite patch. Keep both; without
+   the second, the `tui` profile has no agent-preset registry or default and
+   `egm_reviewer` fails closed. Run the printed command with `DEEPSEEK_API_KEY`
+   exported.
+2. Type `/egm-brainstorm`, then the feature paragraph and author line from
+   `tests/integration/fixtures/dsh_line_count_prompt.txt`, without its approval
+   paragraph. Answer every gate yourself.
+3. Type `/egm-draft concepts_brief.md` and answer every gate yourself.
+4. Type `/egm-review design_draft.md` and choose Step `uninterrupted`.
+5. Quit, then run `python tests/integration/test_dsh_live.py check <dir>`.
+6. For the pause, quote the native log rows for one question and for your typed
+   answer, with their times. Record this run in its own row (see
+   [record row template](#record-row-template)).
 
 ## Requirement map
 
@@ -89,8 +429,8 @@ the `--dump-config` composition, so it is not merged or refused.
 
 The keyless replay runs (`run_dsh` and the `profile` command in
 `tests/integration/test_dsh_live.py`) pass the **installed** copy of that file as
-an additional patch, so they load what a user loads; they no longer inject the
-registry or preset rows themselves. The observer, session-persistence and replay
+an additional patch, so they load what a user loads; no test injects the
+registry or preset rows itself. The observer, session-persistence and replay
 provider rows remain instrumentation, not prerequisites. The negative test
 `test_missing_agent_presets` omits the patch and asserts the exact fail-closed
 error (see [docs/dsh.md](docs/dsh.md#host-prerequisites-and-current-limit)).
@@ -132,135 +472,27 @@ separately.
 | DeepSeek Harness (<surface>) | <dsh_version> | <date_utc> | <test_install> | <Brainstorm> | <Draft> | <Review> | dsh-egm <package_version> from <source_sha>, tarball SHA-256 <tarball_sha256>; model <model>. <reviewers>, <stage_order>, <required_reads>. <deviations>. <limits> |
 ```
 
-## Latest results
+## Harness test record
 
-- Retained 0.2.4 evidence (2026-11-04, `deepseek-flash`, checked read-only with
-  the command above): reviewers pass (15), stage order pass, required reads fail
-  (`missing Persona line`, fixed since by persona-by-path), skill delivery
-  unverifiable (install directory not recorded), upstream artifacts fail with
-  deviation `status-line-only`. This remains a failed acceptance attempt.
-- First paid run on these tests (2026-11-04, `deepseek-flash`, tarball from
-  `5f552aa`): install, both isolation tests, reviewers (15), required reads and
-  skill delivery pass. Stage order fails: stages 5 to 7 were dispatched together
-  and 8 to 9 before any report, so the preamble now states upstream's sequencing
-  rule. Upstream artifacts fail: the final design rewrote one relative link when
-  copied to `docs/designs/` (no listed deviation). Failed acceptance attempt.
-- Run with the sequencing rule, first attempt (2026-11-04, tarball from
-  `6fe3a21`): the parent ended its turn after brainstorm, so draft and review
-  never ran. Failed attempt.
-- Second attempt (2026-11-04, `deepseek-flash`, tarball SHA-256 `dcc0f511…`
-  from `6fe3a21`): reviewers (15), stage order, required reads and skill
-  delivery pass. Upstream artifacts fail only on `status-line-only`
-  (`Draft` to `Proposed`). By the rule above, Review is Pass (fixture) with that
-  Status note. Note: every stage reviewer targeted the final copy
-  `docs/designs/line-count.md` rather than `design_draft.md` as the prompt asks;
-  the parent applied each stage's fixes to both. Upstream's assertions do not
-  check the review target. Isolation was not rerun in this attempt (`-k brainstorm`);
-  it passed on the same tarball's earlier full run.
-- Same tarball run without reasoning, third attempt: the parent wrote the
-  brainstorm brief itself and started no brainstorm reviewers (9 of 15). Failed.
-- **Full suite with reasoning enabled** (2026-11-04, `deepseek-flash`,
-  `reasoningEffort: high`, tarball from `de5a022`): 25 of 25 passed. Install,
-  both isolation tests, reviewers (15), stage order, required reads, skill
-  delivery and upstream's unchanged assertions all pass; the final design is
-  byte-identical to `design_draft.md`, which every stage reviewed. Two notes
-  from that run are now failures: the parent used `send_message` to make a
-  brainstorm reviewer run a second turn, and it edited `design_draft.md` while
-  the stage 5 reviewer was running. The adapter now refuses follow-up messages
-  to reviewers (proven in keyless replay), the preamble forbids editing the
-  document during a stage, and the checks fail both cases, so this run no longer
-  counts.
-- **Full suite on `1d208c2`** (2026-11-04, `deepseek-flash`, `reasoningEffort:
-  high`, tarball SHA-256 `c350453c…`): install, both isolation tests, reviewers
-  (15, each one turn, no follow-up messages), stage order with no edits during a
-  stage, required reads, skill delivery and upstream's unchanged assertions pass;
-  the final design is byte-identical to the reviewed draft. The run first failed
-  `required_reads` because brainstorm prompts had no `TargetFile` line, which
-  ADAPTER-NOTES.md lists as REVIEW-only; the check and the preamble wording now
-  agree (`a77194d`), and rechecking the retained evidence passes every check.
-  The preamble changed after this candidate, so a final run on the release
-  candidate and the manual interactive run are pending. [Historical results](E2E-VERIFICATION.md)
-  do not establish acceptance of the current package.
+One row per run or run series, newest first, in upstream's `TESTING.md` columns. The 2026-11-04 runs
+used DSH 0.2.1-rc.5 on Linux (WSL) through the `sdk` profile and the SDK client
+(`sdk-headless`), with model `deepseek-flash`. "Isolation" is upstream's
+parent-only marker probe plus the keyless replay checks. Development runs are
+summarized in one row; their failures are named there.
+
+| Harness | Version | Date | Install | Brainstorm | Draft | Review | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| DeepSeek Harness (sdk-headless) | 0.2.1-rc.5 | 2026-11-04 | Pass | — | — | — | Development runs, not release evidence: seven paid runs with `deepseek-flash`, from the published 0.2.4 through candidate `1d208c2`. Isolation passed on every full run. The workflow failures they found are fixed and now checked: reviewers received abridged persona text (personas are now read by path); review stages ran in parallel (the preamble states upstream's sequencing rule); with reasoning off the parent stopped after brainstorm once and skipped the brainstorm reviewers once (paid runs use `reasoningEffort: high`); a reviewer was resumed and the draft was edited during a stage (both refused or checked). The last run, on `1d208c2`, passed every check with the final design byte-identical to the reviewed draft. The release candidate still needs its own rows. |
+
+Pending for the release candidate: one full paid run on the frozen tarball, and
+one manual interactive run with a real human approval pause. Both get their own
+rows here.
 
 ## Free checks (not acceptance)
 
-### Phase M checkpoint (historical)
-
-These keyless results were recorded on the uncommitted Phase M tree on
-2026-11-04. They are kept as history; they are not results for the current
-Phase C1a tree. Since Phase M, the relocation changed which files ship, moved the
-suites and tooling, and renamed this record.
-
-- Node suite with `EGM_SOURCE`: 43 passed, 0 skipped (LF-normalized pinned-object
-  comparisons included).
-- WSL `DSH_EGM_LIVE=0 pytest tests/integration -q`: 29 passed, 2 paid tests
-  skipped, including the new installed-pin identity and literal archive-byte
-  regressions.
-- Offline raw-Git provenance: pass. Source blob
-  `6ae169192f6817b2f9b33ebb495c4432866c0caa`, prompt SHA-256
-  `9e7a49cefaeb618fcf8aede675af825cc2c3ee7aab51a441c7689da45747630f`, all 26
-  lock hashes equal to pinned Git objects.
-- Candidate archive from that tree: 53 files, no `EGM.md` map. All 26 vendored
-  members equal the lock's raw SHA-256 and the pinned Git objects; installing it
-  in a disposable profile produced 53 identical files, no maps, and the expected
-  version and pin.
-
-### Phase C1a checkpoint (historical)
-
-Recorded on the uncommitted Phase C1a tree on 2026-11-04. These are the keyless
-free checks for the relocation and are kept as history for that tree. Workflow,
-human-pause and upstream acceptance remain pending.
-
-- Node suite with `EGM_SOURCE` (Windows Node 24): **43 passed, 0 failed, 0
-  skipped**, including the LF-normalized pinned-Git-object comparisons. Plain
-  `npm test` (no `EGM_SOURCE`): 43 tests, 42 passed, 1 optional comparison
-  skipped.
-- WSL `DSH_EGM_LIVE=0 pytest tests/integration tests/unit/test_dsh_traces.py -q`
-  with the recorded Node 24 and locked runtime: **29 passed, 2 skipped** (the two
-  opt-in `@LIVE` paid tests) in 5.5 s.
-- Candidate archive from this tree: **47 files** (46 declared plus
-  `package.json`); no `EGM.md` map, no D2 source, asset README, checker or
-  renderer packed. Installed into a disposable `sdk` profile: 47/47 files
-  identical, version `0.2.4`, pin `113a3af…`. The single candidate archive
-  SHA-256 is kept with the private checkpoint evidence for this uncommitted
-  candidate.
-- Every public export key resolved from the installed package;
-  `dsh.bundle.patch` loaded the three unchanged plugin names; the relocated
-  package passed the keyless replay/install scenarios.
-- Offline raw-Git provenance: pass; source blob `6ae1691…0caa`, prompt SHA-256
-  `9e7a49ce…630f`, all 26 lock hashes equal to pinned Git objects; all 26 raw
-  archive members equal both the lock SHA-256 and the pinned Git objects.
-- Relative links in `docs/dsh.md` and this page resolve; `git diff --check`
-  clean.
-
-### Phase C1b checkpoint (current candidate)
-
-Recorded on the uncommitted Phase C1b tree on 2026-11-04. C1b adds the opt-in
-prerequisite patch (D8); the C1a relocation remains the baseline. These are
-keyless free checks only. Workflow, human-pause and upstream acceptance remain
-pending.
-
-- Node suite with `EGM_SOURCE` (Windows Node 24): **43 passed, 0 failed, 0
-  skipped**, including the LF-normalized pinned-Git-object comparisons.
-- WSL `DSH_EGM_LIVE=0 pytest tests/integration tests/unit/test_dsh_traces.py -q`
-  with the recorded Node 24 and locked runtime: **30 passed, 2 skipped** (the two
-  opt-in `@LIVE` paid tests). The added pass is `test_missing_agent_presets`,
-  which omits the shipped patch and asserts the exact fail-closed error.
-- No test injects `agent-preset-registry` or `preset-standard` rows any more;
-  `run_dsh` and the `profile` command pass the installed
-  `adapters/dsh/agent-presets.patch.yml` as an additional patch instead.
-- Candidate archive from this tree: **48 files** (47 declared plus
-  `package.json`), with the new patch packed; no `EGM.md` map, no D2 source,
-  asset README, checker or renderer packed. Installed into a disposable `sdk`
-  profile: 48/48 files identical, version `0.2.4`, pin `113a3af…`.
-- Offline raw-Git provenance: pass; all 26 lock hashes equal pinned Git objects,
-  and all 26 raw archive members equal the lock SHA-256 and the pinned Git
-  objects.
-- `git diff --check` clean.
-
-Private command logs and machine-readable results are retained with the
-checkpoint evidence for this uncommitted candidate. Acceptance remains pending
-for this candidate and for the workflow, human pause and upstream support.
-
-These are keyless gates. They do not establish the workflow, the human pause or
-upstream acceptance; those remain pending.
+The free checks run on every candidate: the Node suite, the keyless DSH suite,
+the packed-file and installed-file comparisons, the raw-byte and raw-Git
+provenance checks for all 26 vendored files, export-key resolution and a
+relative-link check. They cover packaging, installed identity, host mechanics
+under replay, provenance and documentation. They do not establish the workflow,
+the human pause or upstream acceptance.

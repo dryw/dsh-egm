@@ -1,0 +1,75 @@
+name: Upstream check
+
+# Read-only upstream tracking: every day (and on demand), compare
+# google/elephant-goldfish-model's current HEAD with the commit pinned in
+# upstream.lock.json. Drift and errors are reported through this workflow's CI
+# status and job log; the workflow has no issue/comment write access.
+#
+# A human still does the re-adaptation: this workflow only notices and reports.
+#
+# The checker exits 0 when upstream is unchanged, 1 on drift, and 2 on an
+# API/network error. Drift and errors both fail the job, so a scheduled run goes
+# red and GitHub notifies the owner; drift also prints the machine-readable report.
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # daily at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-check
+  cancel-in-progress: false
+
+jobs:
+  check-upstream:
+    name: Check google/elephant-goldfish-model
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the package
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+
+      - name: Compare upstream HEAD with upstream.lock.json
+        id: drift
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Record the exit code instead of letting `set -e` end the step before the
+          # result can be reported. 0 = up to date, 1 = drift, 2 = API/network error.
+          set +e
+          node adapters/dsh/check_upstream.mjs --json > upstream-report.json 2> upstream-check.stderr
+          script_status=$?
+          set -e
+          echo "script_exit=$script_status" >> "$GITHUB_OUTPUT"
+          if [ "$script_status" -eq 0 ] || [ "$script_status" -eq 1 ]; then
+            echo "status=$script_status" >> "$GITHUB_OUTPUT"
+          else
+            # Normalise an unexpected crash or a missing Node to the script's
+            # documented error code (2) so the failure step always fires.
+            echo "status=2" >> "$GITHUB_OUTPUT"
+            echo "::error::upstream check failed with exit code $script_status"
+            echo '--- check-upstream.mjs stderr (also captured in upstream-check.stderr) ---'
+            cat upstream-check.stderr
+          fi
+          if [ "$script_status" -eq 0 ]; then
+            echo "Upstream unchanged since the pinned commit; nothing to do."
+          elif [ "$script_status" -eq 1 ]; then
+            echo "::error::Upstream changed since the pinned commit; re-vendor and re-adapt the affected files."
+            echo '--- machine-readable drift report (upstream-report.json) ---'
+            cat upstream-report.json
+          fi
+
+      - name: Fail the job on drift or a check error
+        if: always() && steps.drift.outputs.status != '0'
+        shell: bash
+        run: |
+          echo "::error::Upstream check status ${{ steps.drift.outputs.status }} (1 = drift, 2 = check error); see the previous step's log."
+          exit 1

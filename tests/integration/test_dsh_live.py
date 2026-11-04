@@ -1,8 +1,8 @@
-"""DSH equivalent of upstream test_codex.py: run, observe, assert.
+"""DSH equivalent of upstream test_codex.py: install, run, observe, assert.
 
-No custom guards, skill bridge, stage controller, approval records or reports.
-Only the two test functions opt into inference. Helpers also support native replay
-and retained evidence: `python test_dsh_live.py check <evidence-dir>`.
+The two @LIVE tests call a real model and are skipped unless DSH_EGM_LIVE=1. The
+same helpers drive native replay and check retained evidence:
+`python test_dsh_live.py check <evidence-dir>`.
 """
 import argparse
 from datetime import datetime, timezone
@@ -376,7 +376,7 @@ def assert_stage_order(run):
         # report are remediation edits, not a new stage boundary.
         index = next((i for i in range(5) if (i == 0 or first[i - 1] < d["time"]) and d["time"] <= first[i]), None)
         if index is None:
-            # ponytail: a re-dispatch after the first stage 9 report counts as remediation;
+            # A re-dispatch after the first stage 9 report counts as remediation;
             # a stage N re-dispatch after report N counts toward stage N+1.
             remediation.append(d["child"])
         else:
@@ -406,7 +406,7 @@ def assert_required_reads(run, stages):
     for d in dispatches(run):
         persona = envelope(d["prompt"], "Persona")
         assert persona, "missing Persona line"
-        # ADAPTER-NOTES.md: TargetFile is part of the REVIEW envelope only.
+        # docs/dsh.md: TargetFile is part of the REVIEW envelope only.
         if envelope(d["prompt"], "Mode") == "REVIEW":
             assert envelope(d["prompt"], "TargetFile"), "missing TargetFile line"
         agents = os.path.realpath(run["plugin"] / "agents") if run["plugin"] else None

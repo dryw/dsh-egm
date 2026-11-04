@@ -156,7 +156,7 @@ Google's upstream project supplies the EGM skills, reviewer personas, and design
 
 **What “read-only” does and doesn't mean:** it prevents Goldfish reviewers from using write, shell, and other disallowed tools in the supported Harness configuration. It doesn't mean reviewers are unable to see project files: they can read and search material available to their permitted tools. Don't treat the reviewer preset as a confidentiality boundary, and check what project material you expose to it.
 
-The package declares `>=0.2.1-rc.5 <0.3.0`; native replay evidence covers the pinned 0.2.1-rc.5 runtime on Linux, rather than every version in that range. Isolation behavior depends on the Harness implementation of tool restrictions and child-agent spawning APIs. The [host guide](docs/dsh.md) describes the enforcement layers, dispatch rules and their limits; the [testing record](TESTING.md) lists the tests and current results. [ADAPTATIONS.md](ADAPTATIONS.md) explains what comes from Google and what this package adds.
+The package declares `>=0.2.1-rc.5 <0.3.0`; native replay evidence covers the pinned 0.2.1-rc.5 runtime on Linux, rather than every version in that range. Isolation behavior depends on the Harness implementation of tool restrictions and child-agent spawning APIs. The [host guide](docs/dsh.md) describes the enforcement layers, dispatch rules and their limits, and explains what comes from Google and what this package adds; the [testing record](TESTING.md) lists the tests and current results.
 
 ## Upstream tracking and adapter versions
 
@@ -164,7 +164,7 @@ The package declares `>=0.2.1-rc.5 <0.3.0`; native replay evidence covers the pi
 
 We monitor upstream releases and material changes, prefer tagged revisions when practical, and may adopt a tested interim commit. Each update requires content checks and a documented runtime assessment; advancing the pin does not carry forward live acceptance. Adapter fixes and DSH compatibility changes follow this package's semantic versioning, independently of upstream EGM releases.
 
-[TESTING.md](TESTING.md) separates content checks, keyless replay, and historical live evidence. Published 0.2.4 live-model acceptance and Agent Team compatibility remain pending. Recognized upstream support is an EGM maintainer decision, tracked in [EGM #240](https://github.com/google/elephant-goldfish-model/issues/240). If unchanged 0.2.4 passes its exact-artifact acceptance, no new release is needed solely to record those results.
+[TESTING.md](TESTING.md) separates content checks, keyless replay, and live-model runs. Live-model acceptance of the next release is pending, and Agent Team compatibility is not tested. Recognized upstream support is an EGM maintainer decision, tracked in [EGM #240](https://github.com/google/elephant-goldfish-model/issues/240).
 
 ## Included skills
 
@@ -204,13 +204,13 @@ You can add that working directory to `.gitignore` while keeping finalized desig
 
 Want to see whether the reviewers actually find something useful?
 
-The repository includes a [recorded end-to-end example](examples/e2e-verification/) using a small inventory application. It contains a concept brief, a design document, and review reports from all five stages.
+The recorded end-to-end example (historical `0.2.0`) used a small inventory application; its artifacts include a concept brief, a design document, and review reports from all five stages.
 
-In one review, a Goldfish caught an important missing interface: the proposed inventory sweep needed a lock to cover a sequence of operations, but the design never specified a safe way for the sweep to acquire that lock. The revised design introduced a locked snapshot context manager rather than reaching into the inventory store's private lock. See the [finding and resolution](examples/e2e-verification/reviews/zoom_out_report.md).
+In one review, a Goldfish caught an important missing interface: the proposed inventory sweep needed a lock to cover a sequence of operations, but the design never specified a safe way for the sweep to acquire that lock. The revised design introduced a locked snapshot context manager rather than reaching into the inventory store's private lock. The finding and its resolution are part of the recorded example.
 
 The run also shows the limits of the evidence: it used synthetic owner answers, auto-approved some draft gates, and split the review across supported presets; its final implementation-readiness re-audit returned **NO-GO** at the re-audit cap, with the remaining precision issues recorded and addressed afterward. It demonstrates the design workflow and its ability to surface concrete problems, **not** that the fixture feature was implemented or that the resulting design passed every gate. The example is historical `0.2.0` evidence.
 
-See [E2E-VERIFICATION.md](E2E-VERIFICATION.md) for the environment, reviewer activations, artifacts, and concessions. The example files live in the GitHub repository; they aren't included in the npm package.
+The original example files are in earlier Git revisions; they aren't included in the npm package.
 
 ## Feedback and support
 
@@ -228,8 +228,6 @@ I'm especially interested in whether the plugin installed cleanly, whether the G
 
 - [docs/dsh.md](docs/dsh.md) — the host guide: install/invoke, manifest changes, path roots, dispatch and stage sequencing, reviewer isolation and refusals.
 - [TESTING.md](TESTING.md) — the requirement map, harness test record and current limits.
-- [E2E-VERIFICATION.md](E2E-VERIFICATION.md) — the recorded design workflow and its limitations.
-- [ADAPTATIONS.md](ADAPTATIONS.md) and [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — upstream provenance and the detailed harness notes this guide consolidates.
 - [CHANGELOG.md](CHANGELOG.md) — release history.
 - [docs/assets/](docs/assets/README.md) — the workflow diagrams, their D2 sources and the renderer.
 
@@ -246,6 +244,6 @@ The upstream drift check reports changes; it never modifies or replaces the vend
 
 Licensed under the [Apache License, Version 2.0](LICENSE).
 
-The skills, reviewer personas, standards, and templates are vendored from [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model), Copyright Google LLC, under Apache-2.0. See [NOTICE](NOTICE) and [ADAPTATIONS.md](ADAPTATIONS.md). The DeepSeek Harness adapter, plugin bundle, and reviewer preset are original work in this package.
+The skills, reviewer personas, standards, and templates are vendored from [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model), Copyright Google LLC, under Apache-2.0. See [NOTICE](NOTICE) and [docs/dsh.md](docs/dsh.md). The DeepSeek Harness adapter, plugin bundle, and reviewer preset are original work in this package.
 
 `dsh-egm` is an independent community port. It is not affiliated with, endorsed by, or officially supported by Google.

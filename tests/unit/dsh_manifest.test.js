@@ -28,7 +28,7 @@ const LOCKED_ADAPTED_FILES = readJsonFile(packagePath('upstream.lock.json')).fil
 /**
  * Content the bundle cannot work without, and that `files` must therefore include:
  * every locked upstream path plus the relocated host modules, the active guide and
- * record, the retained merge-source history, and the provenance/legal files.
+ * record, and the provenance/legal files.
  */
 const REQUIRED_FILES = [
   ...LOCKED_ADAPTED_FILES,
@@ -46,9 +46,6 @@ const REQUIRED_FILES = [
   'README.zh-CN.md',
   'TESTING.md',
   'docs/dsh.md',
-  'ADAPTER-NOTES.md',
-  'ADAPTATIONS.md',
-  'E2E-VERIFICATION.md',
   'upstream.lock.json',
   'LICENSE',
   'NOTICE',

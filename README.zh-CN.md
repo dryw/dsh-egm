@@ -160,7 +160,7 @@ Google 的上游项目提供了 EGM 的技能、评审者角色设定（personas
 
 **关于“只读”的含义与界限：** 它能防止金鱼评审者在受支持的 Harness 配置中使用写入、Shell 及其他被禁用的工具。但**这并不意味着评审者无法看到项目文件**：它们可以读取和搜索允许使用的工具所暴露的内容。请勿将评审者预设视为保密隔离边界，并请务必检查向其公开的项目内容。
 
-本集成的原生回放证据覆盖锁定的 DSH 0.2.1-rc.5 Linux 运行时，并不覆盖声明范围内的每个版本；其隔离行为取决于 Harness 对工具限制和子 Agent 派生 API 的具体实现。 [宿主指南](docs/dsh.md) 详细介绍了防护层、派发规则及其局限性；[测试记录](TESTING.md) 列出了测试与当前结果。[ADAPTATIONS.md](ADAPTATIONS.md) 解释了哪些内容源自 Google，哪些是本软件包新增的内容。
+本集成的原生回放证据覆盖锁定的 DSH 0.2.1-rc.5 Linux 运行时，并不覆盖声明范围内的每个版本；其隔离行为取决于 Harness 对工具限制和子 Agent 派生 API 的具体实现。 [宿主指南](docs/dsh.md) 详细介绍了防护层、派发规则及其局限性，并说明哪些内容源自 Google、哪些是本软件包新增的内容；[测试记录](TESTING.md) 列出了测试与当前结果。
 
 ## 包含的技能
 
@@ -200,13 +200,13 @@ EGM artifact directory: .dev/docs
 
 想看看评审者是否真的能发现有价值的问题？
 
-仓库中包含一份针对小型库存应用的[端到端完整记录示例](examples/e2e-verification/)。其中包含概念简报、设计文档以及全部五个阶段的评审报告。
+记录中的端到端示例（历史 `0.2.0`）使用了一个小型库存应用；其产物包括概念简报、设计文档以及全部五个阶段的评审报告。
 
-在其中一次评审中，金鱼捕获了一个重要的接口缺失：拟议的库存清理（inventory sweep）需要锁来覆盖一连串的操作，但设计说明书中从未指定清理程序获取该锁的安全方式。修改后的设计引入了一个加锁的快照上下文管理器（locked snapshot context manager），而不是直接伸进库存存储的私有锁中。参见[问题发现与解决方案](examples/e2e-verification/reviews/zoom_out_report.md)。
+在其中一次评审中，金鱼捕获了一个重要的接口缺失：拟议的库存清理（inventory sweep）需要锁来覆盖一连串的操作，但设计说明书中从未指定清理程序获取该锁的安全方式。修改后的设计引入了一个加锁的快照上下文管理器（locked snapshot context manager），而不是直接伸进库存存储的私有锁中。问题发现与解决方案已记录在这份完整示例中。
 
 该次运行使用了合成的所有者答复、自动批准了部分草稿阶段，并将评审拆分到受支持的预设上执行；其最终实现就绪度复审在复审上限处返回 **NO-GO**，剩余的精确性问题已记录并在之后的设计中修复。它展示了设计工作流及其发现具体问题的能力，**并不**表示示例功能已经实现，也不表示最终设计通过了所有关卡。该示例是 `0.2.0` 的历史证据。
 
-有关运行环境、评审者激活、产物与让步（concessions），请参阅 [E2E-VERIFICATION.md](E2E-VERIFICATION.md)。示例文件仅存在于 GitHub 仓库中，不包含在 npm 包内。
+原始示例文件保留在更早的 Git 修订中，不包含在 npm 包内。
 
 ## 反馈与支持
 
@@ -224,8 +224,6 @@ EGM artifact directory: .dev/docs
 
 - [docs/dsh.md](docs/dsh.md) — 宿主指南：安装/调用、清单变更、路径根、派发与阶段顺序、评审者隔离与拒绝行为。
 - [TESTING.md](TESTING.md) — 需求对照表、Harness 测试记录与当前局限。
-- [E2E-VERIFICATION.md](E2E-VERIFICATION.md) — 记录的设计工作流及其局限性。
-- [ADAPTATIONS.md](ADAPTATIONS.md) 与 [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — 上游来源与本指南汇总的 Harness 机制细节。
 - [CHANGELOG.md](CHANGELOG.md) — 版本变更历史。
 - [docs/assets/](docs/assets/README.md) — 工作流架构图、其 D2 源码与渲染脚本。
 
@@ -242,6 +240,6 @@ node adapters/dsh/check_upstream.mjs
 
 本项目基于 [Apache License, Version 2.0](LICENSE) 开源。
 
-技能、评审者角色设定、标准和模板均随包内置，源自 [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model)，Copyright Google LLC，采用 Apache-2.0 授权；参见 [NOTICE](NOTICE) 与 [ADAPTATIONS.md](ADAPTATIONS.md)。DeepSeek Harness 适配器、插件包以及评审者预设均为本软件包的原创工作。
+技能、评审者角色设定、标准和模板均随包内置，源自 [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model)，Copyright Google LLC，采用 Apache-2.0 授权；参见 [NOTICE](NOTICE) 与 [docs/dsh.md](docs/dsh.md)。DeepSeek Harness 适配器、插件包以及评审者预设均为本软件包的原创工作。
 
 `dsh-egm` 是一个独立的社区移植版本。它与 Google 无任何隶属关系，亦未获得 Google 的认可或官方支持。

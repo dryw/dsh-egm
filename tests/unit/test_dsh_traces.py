@@ -78,7 +78,7 @@ def test_missing_lifecycle_event_fails(tmp_path, method):
 
 
 def test_resumed_reviewer_fails(tmp_path):
-    # Seen in a live run: the parent messaged a finished reviewer, which ran a second turn.
+    # A parent message to a finished reviewer starts a second turn; reviewers are single-use.
     run = synthetic_run(tmp_path)
     run["sessions"]["C5"].append(dict(run["sessions"]["C5"][-1]))
     with pytest.raises(AssertionError, match="reviewer resumed for a second turn"):
@@ -104,7 +104,7 @@ def test_next_stage_before_report_fails(tmp_path):
 
 
 def test_all_stages_dispatched_at_once_fails(tmp_path):
-    # Seen in a live run: every review stage dispatched before any report was written.
+    # Every review stage dispatched before any report exists.
     run = synthetic_run(tmp_path)
     for row in run["sessions"]["P"]:
         if row.get("type") == "tool/call" and row["data"]["callId"].startswith("spawn"):
@@ -124,7 +124,7 @@ def test_review_prompt_without_target_fails(tmp_path):
 
 
 def test_brainstorm_prompt_may_omit_the_target_line(tmp_path):
-    # Seen in a live run: brainstorm prompts carried Persona and Mode but no TargetFile line.
+    # The envelope lists TargetFile for REVIEW only, so a brainstorm prompt may omit it.
     run = synthetic_run(tmp_path)
     spawn = next(r for r in run["records"] if r.get("callId") == "spawn5")
     spawn["arguments"]["prompt"] = f"Persona: {PERSONA}\nMode: BRAINSTORM\n"
@@ -165,7 +165,7 @@ def test_redispatch_after_a_report_counts_toward_the_next_stage(tmp_path):
 
 
 def test_rewriting_a_report_after_the_next_stage_starts_passes(tmp_path):
-    # Seen in a live run: zoom_out_report.md was edited again after stage 6 began.
+    # Editing an earlier stage's report after the next stage starts is remediation, not overlap.
     run = synthetic_run(tmp_path)
     rewrite = copy.deepcopy([r for r in run["records"] if r.get("callId") == "write5"][0])
     rewrite["callId"] = "write5b"
@@ -176,7 +176,7 @@ def test_rewriting_a_report_after_the_next_stage_starts_passes(tmp_path):
 
 
 def test_standard_line_may_name_several_files_in_prose(tmp_path):
-    # Seen in a live run: "TargetStandard: <standard> and the design template at <path>".
+    # An envelope line can name several files in prose, e.g. "<standard> and the design template at <path>".
     run = synthetic_run(tmp_path)
     spawn = next(r for r in run["records"] if r.get("callId") == "spawn7")
     spawn["arguments"]["prompt"] = spawn["arguments"]["prompt"].replace(
@@ -201,7 +201,7 @@ def test_status_only_difference_ignores_template_spacing(tmp_path):
 
 
 def test_editing_the_target_during_a_stage_fails(tmp_path):
-    # Seen in a live run: design_draft.md was edited after the stage 5 reviewer started.
+    # The document under review must not change while that stage's reviewers run.
     run = synthetic_run(tmp_path)
     run["records"].append({"kind": "tool", "sessionId": "P", "callId": "edit-draft", "name": "edit",
                            "arguments": {"file_path": "design_draft.md"}, "result": {"isError": False}})

@@ -11,6 +11,3 @@ __pycache__/
 .pnpm-store/
 .probe/
 .review-package/
-requirements-dev.txt
-tests/integration/sanitize_dsh.py
-tests/integration/fixtures/dsh/
