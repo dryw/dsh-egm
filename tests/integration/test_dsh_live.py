@@ -39,6 +39,8 @@ INVOCATIONS = "/egm-brainstorm /egm-draft /egm-review"
 # Upstream's Codex test runs with model_reasoning_effort="medium". DeepSeek offers
 # low, high and max; "high" is its default when thinking is enabled.
 REASONING = os.environ.get("DSH_EGM_REASONING", "high")
+# A full workflow with reasoning on can exceed 20 minutes; the wait bounds one run.
+WAIT_SECONDS = int(os.environ.get("DSH_EGM_WAIT_SECONDS", "3600"))
 # Upstream egm-review stages 5 to 9, in order, by the report each one writes.
 REPORTS = ("zoom_out_report.md", "comprehension_report.md", "critic_report.md",
            "intermediate_zoom_out_report.md", "implementation_readiness_report.md")
@@ -198,7 +200,7 @@ def run_dsh(installed, root, content, provider="deepseek-official", model=None, 
     env["EGM_TEST_RECORD"] = str(root / "records.jsonl")
     config = HarnessConfig(dsh_bin=str(RUNTIME / "node_modules/.bin/dsh"), dsh_home=str(home), cwd=str(workspace),
                            patches=tuple(patches), env=env, initialize_timeout_seconds=30,
-                           request_timeout_seconds=1200, shutdown_timeout_seconds=3)
+                           request_timeout_seconds=WAIT_SECONDS, shutdown_timeout_seconds=3)
     parent = "egm-test-" + uuid.uuid4().hex
     write_json(root / "run.json", {"parent": parent, "workspace": str(workspace), "plugin": str(plugin),
                                    "dsh_home": str(home)})
@@ -217,7 +219,7 @@ def run_dsh(installed, root, content, provider="deepseek-official", model=None, 
             with client.subscribe_session_notifications(parent) as subscription:
                 client.session_prompt(parent, content, notification_subscription=subscription, on_notification=collect)
                 client.request("session/wait", {"sessionId": parent}, response_model=Empty,
-                               timeout_seconds=1200, notification_subscription=subscription, on_notification=collect)
+                               timeout_seconds=WAIT_SECONDS, notification_subscription=subscription, on_notification=collect)
                 subscription.drain(collect)
     finally:
         # Preserve notifications even when prompting or waiting fails.

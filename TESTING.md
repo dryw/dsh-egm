@@ -346,7 +346,7 @@ DeepSeek offers no medium, and high is its default when thinking is on.
 
 This runs the whole suite against the tarball, so install, isolation and
 workflow are separate outcomes. It spends API credit: 32,768 output tokens per
-response, a 20-minute SDK wait, no provider retries and no total cap. Keep native
+response, a 60-minute SDK wait per run (`DSH_EGM_WAIT_SECONDS` overrides it), no provider retries and no total cap. Keep native
 logs private; the client closes in `finally`.
 
 The workflow test sends the unchanged upstream line-count prompt after one block
