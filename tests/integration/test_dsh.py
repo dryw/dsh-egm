@@ -7,9 +7,16 @@ import tarfile
 import uuid
 
 from test_dsh_live import RUNTIME, INVOCATIONS, run_dsh, child_traces, assert_skill_delivery
-from test_live_checks import replay
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def replay(root, entries, children=()):
+    path = root / "replay.json"
+    path.write_text(json.dumps(entries), encoding="utf-8")
+    return [{"id": "keyless-provider", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-llm-replay/lib/index.js"),
+             "config": {"file": str(path), "overrideFile": str(path), "childFiles": [str(p) for p in children],
+                        "providers": [{"id": "egm-replay", "models": [{"id": "fixed", "contextWindow": 1048576}]}]}}]
 
 
 def assert_vendored_archive(archive, lock):
@@ -54,8 +61,8 @@ def test_adapter(installed_plugin, tmp_path):
     # Upstream asks hosts to show what instruction files reach a fresh reviewer.
     probe = "EGM instruction-file probe: " + uuid.uuid4().hex
     (workspace / "AGENTS.md").write_text(probe + "\n", encoding="utf-8")
-    entries = json.loads((FIXTURES / "isolation.override.json").read_text().replace("__WORKSPACE__", str(workspace)))
-    seed = FIXTURES / "readonly-child.session.jsonl"
+    entries = json.loads((FIXTURES / "dsh_isolation.override.json").read_text().replace("__WORKSPACE__", str(workspace)))
+    seed = FIXTURES / "dsh_readonly_child.session.jsonl"
     # Validate the native-writer seed with DSH itself, not a fabricated event parser.
     parser = (RUNTIME / "node_modules/@deepseek-ai/dsh-llm-replay/lib/index.js").as_uri()
     subprocess.run(["node", "--input-type=module", "-e",

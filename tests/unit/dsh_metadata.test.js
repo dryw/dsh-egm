@@ -1,7 +1,8 @@
 /**
  * Plugin-manager metadata checks: locale dictionaries and the icon are what the
- * DSH plugin manager shows for an installed bundle. DSH reads `locale/en.json`
- * through the package `exports` map and validates the icon bytes itself.
+ * DSH plugin manager shows for an installed bundle. DSH reads
+ * `adapters/dsh/locale/en.json` through the package `exports` map and validates
+ * the icon bytes itself.
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -16,14 +17,14 @@ import {
   readJsonFile,
   readPackageJson,
   readTextFile,
-} from './helpers.js'
+} from './dsh_helpers.js'
 
 const REQUIRED_LOCALES = ['en', 'zh']
 const LANGUAGE_ID = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/u
 const ICON_MAX_BYTES = 256 * 1024
 const ICON_EXTENSIONS = new Set(['.svg', '.png', '.jpg', '.jpeg', '.webp'])
 
-const iconPath = join(PACKAGE_ROOT, 'icon.svg')
+const iconPath = join(PACKAGE_ROOT, 'adapters', 'dsh', 'icon.svg')
 
 /** Resolve one exports subpath target the way Node does for a string/conditional export. */
 function exportTarget(exportsField, key) {
@@ -43,7 +44,7 @@ test('locale dictionaries declare meta.title and meta.description', () => {
   const problems = []
   const languageFiles = isDirectory(LOCALE_DIR) ? readdirSync(LOCALE_DIR).filter((name) => name.endsWith('.json')).sort() : []
   for (const language of REQUIRED_LOCALES) {
-    if (!languageFiles.includes(`${language}.json`)) problems.push(`locale/${language}.json is missing`)
+    if (!languageFiles.includes(`${language}.json`)) problems.push(`adapters/dsh/locale/${language}.json is missing`)
   }
   for (const file of languageFiles) {
     let dictionary
@@ -55,12 +56,12 @@ test('locale dictionaries declare meta.title and meta.description', () => {
     }
     const meta = dictionary?.meta
     if (meta === null || typeof meta !== 'object' || Array.isArray(meta)) {
-      problems.push(`locale/${file}: "meta" must be an object`)
+      problems.push(`adapters/dsh/locale/${file}: "meta" must be an object`)
       continue
     }
     for (const field of ['title', 'description']) {
       if (typeof meta[field] !== 'string' || meta[field].trim() === '') {
-        problems.push(`locale/${file}: meta.${field} must be a non-empty string (DSH shows it in the plugin manager)`)
+        problems.push(`adapters/dsh/locale/${file}: meta.${field} must be a non-empty string (DSH shows it in the plugin manager)`)
       }
     }
   }
@@ -69,13 +70,13 @@ test('locale dictionaries declare meta.title and meta.description', () => {
 
 test('locale filenames are valid language ids', () => {
   if (!isDirectory(LOCALE_DIR)) {
-    assert.fail('locale/ directory is missing; the plugin manager falls back to package.json text with no translation')
+    assert.fail('adapters/dsh/locale/ directory is missing; the plugin manager falls back to package.json text with no translation')
   }
   const problems = []
   for (const file of readdirSync(LOCALE_DIR)) {
     if (!file.endsWith('.json')) continue
     const language = file.slice(0, -5)
-    if (!LANGUAGE_ID.test(language)) problems.push(`locale/${file}: ${JSON.stringify(language)} is not a language id`)
+    if (!LANGUAGE_ID.test(language)) problems.push(`adapters/dsh/locale/${file}: ${JSON.stringify(language)} is not a language id`)
   }
   assert.equal(problems.length, 0, `locale filename problems:${formatList(problems)}`)
 })
@@ -83,10 +84,10 @@ test('locale filenames are valid language ids', () => {
 test('icon.svg is a valid SVG and within the DSH icon limits', () => {
   const problems = []
   if (!isFile(iconPath)) {
-    assert.fail('icon.svg is missing; the plugin manager cannot render the bundle icon')
+    assert.fail('adapters/dsh/icon.svg is missing; the plugin manager cannot render the bundle icon')
   }
   const size = statSync(iconPath).size
-  if (size > ICON_MAX_BYTES) problems.push(`icon.svg is ${size} bytes; DSH refuses icons over ${ICON_MAX_BYTES} bytes`)
+  if (size > ICON_MAX_BYTES) problems.push(`adapters/dsh/icon.svg is ${size} bytes; DSH refuses icons over ${ICON_MAX_BYTES} bytes`)
   const text = readTextFile(iconPath).replace(/^\uFEFF/u, '').trim()
   const afterProlog = text
     .replace(/^<\?xml[^?]*\?>\s*/u, '')
@@ -119,7 +120,7 @@ test('manifest exposes the locale dictionaries and icon to the plugin manager', 
     } else {
       for (const language of REQUIRED_LOCALES) {
         const resolved = String(target).replace(/^\.\//u, '').replace('*', language)
-        if (!isFile(join(PACKAGE_ROOT, resolved))) problems.push(`exports[${JSON.stringify(localeKey)}] does not resolve locale/${language}.json`)
+        if (!isFile(join(PACKAGE_ROOT, resolved))) problems.push(`exports[${JSON.stringify(localeKey)}] does not resolve adapters/dsh/locale/${language}.json`)
       }
     }
   }

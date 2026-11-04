@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { readPackageJson, semverSatisfies } from './helpers.js'
+import { readPackageJson, semverSatisfies } from './dsh_helpers.js'
 
 const manifest = readPackageJson()
 
@@ -35,7 +35,7 @@ test('engines.dsh follows the DSH prerelease policy and stays inside the tested 
   )
   // DSH evaluates engines.dsh with semver { includePrerelease: true } (the shipped Harness's
   // dsh-app-boot `satisfies`), so a later 0.2.2 prerelease is admitted even though npm's
-  // default range policy rejects it. This test pins that policy; see test/helpers.js.
+  // default range policy rejects it. This test pins that policy; see tests/unit/dsh_helpers.js.
   assert.equal(semverSatisfies('0.2.2-alpha.2', range), true)
   assert.equal(semverSatisfies('0.2.2', range), true)
   assert.equal(

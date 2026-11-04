@@ -35,7 +35,7 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - name: Run the package test suite
-        run: node --test
+        run: npm test
 
       - name: Confirm the packed file list
         # bash on both runners: npm normalises packed paths to forward slashes, and
@@ -46,85 +46,53 @@ jobs:
           node - <<'NODE'
           const { readFileSync } = require('node:fs')
           const [pack] = JSON.parse(readFileSync('pack.json', 'utf8'))
+          const manifest = JSON.parse(readFileSync('package.json', 'utf8'))
+          // npm's strict include for an explicitly listed file is unanchored unless
+          // the entry keeps a "./" prefix (which becomes "/README.md"). package.json
+          // uses "./README.md" so a nested docs/assets/README.md is not swept in.
+          const shipped = manifest.files.map((file) => file.replace(/^\.\//u, ''))
           const files = new Set(pack.files.map((file) => file.path))
-          const skills = [
-            'egm-bootstrap',
-            'egm-brainstorm',
-            'egm-draft',
-            'egm-drift-report',
-            'egm-resolve',
-            'egm-review',
-            'egm-review-loop',
+
+          // Every explicitly declared file must be packed. npm also always packs
+          // package.json, so the packed set must not contain anything undeclared.
+          const allowed = new Set([...shipped, 'package.json'])
+          const missing = shipped.filter((file) => !files.has(file))
+          const unexpected = [...files].filter((file) => !allowed.has(file))
+
+          // Development-only trees and repository-only tooling must never be packed:
+          // the suites, the historical examples and assessments, CI, private .dev
+          // evidence, the D2 sources and their renderer, the manual upstream checker,
+          // and any temporary directory EGM map sidecar.
+          const forbidden = [
+            /^\.dev\//u,
+            /^\.github\//u,
+            /^tests\//u,
+            /^test\//u,
+            /^examples\//u,
+            /^docs\/testing\//u,
+            /^diagrams\//u,
+            /^scripts\//u,
+            /^adapters\/dsh\/check_upstream\.mjs$/u,
+            /^adapters\/dsh\/render_diagrams\.mjs$/u,
+            /^docs\/assets\/README\.md$/u,
+            /^docs\/assets\/[^/]*\.d2$/u,
+            /(?:^|\/)EGM\.md$/u,
           ]
-          const personas = [
-            'bootstrap_orchestrator',
-            'codebase_details',
-            'comprehension',
-            'design_critic',
-            'implementation_readiness',
-            'structural',
-            'style',
-            'synthesizer',
-            'zoom_out',
-          ]
-          const required = [
-            'package.json',
-            'index.js',
-            'skills-host.js',
-            'reviewer-host.js',
-            'reviewer-tools.js',
-            'cordis.patch.yml',
-            'icon.svg',
-            'diagrams/workflow.d2',
-            'diagrams/workflow.svg',
-            'diagrams/protocol.d2',
-            'diagrams/protocol.svg',
-            'diagrams/render.mjs',
-            'README.md',
-            'README.zh-CN.md',
-            'LICENSE',
-            'NOTICE',
-            'ADAPTER-NOTES.md',
-            'ADAPTATIONS.md',
-            'E2E-VERIFICATION.md',
-            'VERIFICATION.md',
-            'CHANGELOG.md',
-            'upstream.lock.json',
-            'scripts/check-upstream.mjs',
-            'resources/README.md',
-            'resources/execution_instructions.md',
-            'resources/document_standards/feature-spec-standard.md',
-            'resources/document_standards/heilmeier-standard.md',
-            'resources/document_standards/implementation-readiness-standard.md',
-            'resources/document_standards/re-implementation-standard.md',
-            'resources/document_standards/zoom-out-standard.md',
-            ...skills.map((skill) => `skills/${skill}/SKILL.md`),
-            'skills/egm-draft/references/design_doc.md',
-            'skills/egm-bootstrap/references/templates.md',
-            'skills/egm-bootstrap/references/worker-return.schema.json',
-            ...personas.map((persona) => `agents/${persona}.md`),
-          ]
-          const missing = required.filter((file) => !files.has(file))
-          // Directory EGM maps are temporary review sidecars. They must never be
-          // packed, including sidecars under otherwise-shipped roots.
-          const leaked = [...files].filter(
-            (file) =>
-              file.endsWith('EGM.md') ||
-              file.startsWith('test/') ||
-              file.startsWith('tests/') ||
-              file.startsWith('docs/testing/') ||
-              file.startsWith('examples/') ||
-              file.startsWith('.github/'),
-          )
+          const leaked = [...files].filter((file) => forbidden.some((pattern) => pattern.test(file)))
+
           if (missing.length > 0) {
-            console.error('files missing from the npm package:', missing)
+            console.error('declared files missing from the npm package:', missing)
+            process.exit(1)
+          }
+          if (unexpected.length > 0) {
+            console.error('undeclared files packed into the npm package:', unexpected)
             process.exit(1)
           }
           if (leaked.length > 0) {
             console.error('development files leaked into the npm package:', leaked)
             process.exit(1)
           }
-          console.log(`package contents OK: ${files.size} files`)
+          console.log(`package contents OK: ${files.size} files, ${shipped.length} declared`)
           NODE
 
   integration:
@@ -140,29 +108,29 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: tests/integration/runtime/package-lock.json
+          cache-dependency-path: tests/integration/dsh-ci/package-lock.json
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: tests/integration/requirements.txt
+          cache-dependency-path: tests/integration/dsh_requirements.txt
 
       - name: Install the locked test runtime
-        run: npm ci --prefix tests/integration/runtime
+        run: npm ci --prefix tests/integration/dsh-ci
 
       - name: Install the locked Python test dependencies
         run: |
           python -m venv "$RUNNER_TEMP/egm-venv"
-          "$RUNNER_TEMP/egm-venv/bin/python" -m pip install -r tests/integration/requirements.txt
+          "$RUNNER_TEMP/egm-venv/bin/python" -m pip install -r tests/integration/dsh_requirements.txt
           "$RUNNER_TEMP/egm-venv/bin/python" -m pip check
 
       - name: Run keyless adapter checks
         env:
           DSH_EGM_LIVE: '0'
         run: |
-          "$RUNNER_TEMP/egm-venv/bin/python" -m pytest tests/integration -q --basetemp "$RUNNER_TEMP/egm-replay"
+          "$RUNNER_TEMP/egm-venv/bin/python" -m pytest tests/integration tests/unit/test_dsh_traces.py -q --basetemp "$RUNNER_TEMP/egm-replay"
 
       - name: Retain synthetic failure evidence
         if: failure()

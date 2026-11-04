@@ -1,7 +1,8 @@
-# diagrams
+# Diagram assets
 
-The two SVG diagrams embedded in [README.md](../README.md) are authored in
+The two SVG diagrams embedded in [README.md](../../README.md) are authored in
 [D2](https://d2lang.com), so they can be edited as text and re-rendered without a design tool.
+The sources and the rendered SVGs both live in this directory (`docs/assets/`).
 
 | D2 source | Rendered SVG | Used by |
 |---|---|---|
@@ -17,15 +18,16 @@ The two SVG diagrams embedded in [README.md](../README.md) are authored in
 3. Re-render both SVGs from the repository root:
 
    ```sh
-   node diagrams/render.mjs
+   node adapters/dsh/render_diagrams.mjs
 
    # or point at a specific D2 binary:
-   D2=/path/to/d2 node diagrams/render.mjs
+   D2=/path/to/d2 node adapters/dsh/render_diagrams.mjs
    ```
 
-The render script passes the right flags per diagram, then adds the accessibility
-metadata D2 does not emit: `width`/`height`, `role="img"`, `aria-label` and a
-`<title>`. It also paints an adaptive light/dark background behind D2's
+The render script
+([`adapters/dsh/render_diagrams.mjs`](../../adapters/dsh/render_diagrams.mjs)) passes the right flags
+per diagram, then adds the accessibility metadata D2 does not emit: `width`/`height`, `role="img"`,
+`aria-label` and a `<title>`. It also paints an adaptive light/dark background behind D2's
 transparent canvas, so an SVG opened on its own page is readable too.
 
 ## Theming
@@ -43,5 +45,9 @@ transparent canvas, so an SVG opened on its own page is readable too.
   protocol sequence diagram is intentionally tall; it is embedded in the README's
   five-phase protocol section.
 
-Only re-rendering is needed for a visual change; `node --test` verifies the
-package manifest (the `diagrams/` files are shipped), not the SVG contents.
+## What is shipped
+
+Only the two rendered SVGs linked above are packaged (they are the README's images). The `.d2`
+sources, this README and the renderer under `adapters/dsh/` are repository-only maintenance
+material and are excluded from the npm tarball. `npm test` checks the package manifest's packed
+paths, not the SVG contents; re-rendering is only needed for a visual change.

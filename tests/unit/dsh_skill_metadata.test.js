@@ -18,7 +18,7 @@ import {
   parseFrontmatter,
   readTextFile,
   relativeToPackage,
-} from './helpers.js'
+} from './dsh_helpers.js'
 
 const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u
 const BOOLEAN_VALUES = new Set(['true', 'false'])

@@ -10,8 +10,8 @@ import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { PACKAGE_ROOT, formatList, isFile, relativeToPackage, filesEntryMatches, readPackageJson, walkFiles } from './helpers.js'
-import { ADAPTED_FILES, DEFAULT_REPOSITORY, LOCK_PATH, readLock, sha256 } from '../scripts/check-upstream.mjs'
+import { PACKAGE_ROOT, formatList, isFile, relativeToPackage, filesEntryMatches, readPackageJson, walkFiles } from './dsh_helpers.js'
+import { ADAPTED_FILES, DEFAULT_REPOSITORY, LOCK_PATH, readLock, sha256 } from '../../adapters/dsh/check_upstream.mjs'
 
 const lock = readLock(LOCK_PATH)
 const SHA256 = /^[0-9a-f]{64}$/u
@@ -48,7 +48,7 @@ test('upstream.lock.json pins the upstream repository and every adapted file', (
   if (typeof lock.commit !== 'string' || !/^[0-9a-f]{40}$/u.test(lock.commit)) problems.push('commit must be a full 40-character commit SHA')
   const recorded = (lock.files ?? []).map((entry) => [entry.upstream, entry.adapted])
   if (JSON.stringify(recorded) !== JSON.stringify(ADAPTED_FILES)) {
-    problems.push('files mapping drifted from ADAPTED_FILES in scripts/check-upstream.mjs (regenerate with --update-lock)')
+    problems.push('files mapping drifted from ADAPTED_FILES in adapters/dsh/check_upstream.mjs (regenerate with --update-lock)')
   }
   for (const entry of lock.files ?? []) {
     if (!SHA256.test(entry.sha256)) problems.push(`${entry.upstream}: sha256 is not a SHA-256 hex digest`)
@@ -97,7 +97,7 @@ test('every lock entry equals the pinned Git object in an upstream checkout', (t
 })
 
 test('the check-upstream entry point is inert when imported and exposes its mapping', () => {
-  // Importing scripts/check-upstream.mjs above must not run its CLI (it guards on import.meta.url).
+  // Importing adapters/dsh/check_upstream.mjs above must not run its CLI (it guards on import.meta.url).
   assert.ok(ADAPTED_FILES.length > 0)
   assert.equal(new Set(ADAPTED_FILES.map(([upstream]) => upstream)).size, ADAPTED_FILES.length, 'ADAPTED_FILES has duplicate upstream paths')
 })

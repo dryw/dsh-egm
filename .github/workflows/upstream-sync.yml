@@ -46,7 +46,7 @@ jobs:
           # Record the exit code instead of letting `set -e` end the step before the
           # alert can be opened. 0 = up to date, 1 = drift, 2 = API/network error.
           set +e
-          node scripts/check-upstream.mjs --json > upstream-report.json 2> upstream-check.stderr
+          node adapters/dsh/check_upstream.mjs --json > upstream-report.json 2> upstream-check.stderr
           script_status=$?
           set -e
           echo "script_exit=$script_status" >> "$GITHUB_OUTPUT"
@@ -102,8 +102,8 @@ jobs:
             '',
             '- [ ] Review the affected files above against the current upstream content',
             '- [ ] Re-vendor the affected `skills/**`, `agents/**` and `resources/**` files verbatim from the new upstream commit; keep DSH harness mechanics in the integration layer only',
-            '- [ ] Run `node --test` from the package root and fix any lock or adapter failures',
-            '- [ ] Refresh `upstream.lock.json` for the new commit (run `node scripts/check-upstream.mjs` in lock-update mode; see `scripts/README.md`) and commit the result',
+            '- [ ] Run `npm test` from the package root and fix any lock or adapter failures',
+            '- [ ] Refresh `upstream.lock.json` for the new commit (run `node adapters/dsh/check_upstream.mjs` in lock-update mode; see `scripts/README.md`) and commit the result',
             '- [ ] Confirm `npm pack --dry-run` still ships all runtime content, then bump the package version for a release',
           )
           writeFileSync('issue-body.md', lines.join('\n') + '\n')
@@ -146,7 +146,7 @@ jobs:
             '',
             `- Workflow run: ${process.env.RUN_URL || '(unknown run URL)'}`,
             `- Pinned commit: \`${pinned}\``,
-            '- Command: `node scripts/check-upstream.mjs --json`',
+            '- Command: `node adapters/dsh/check_upstream.mjs --json`',
             '',
             '### Failure output',
             '',

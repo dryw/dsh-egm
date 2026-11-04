@@ -1,6 +1,6 @@
 /**
- * Manifest checks: the package must be a valid DSH bundle (DESIGN.md and the
- * publish guide's bundle manifest), ship the right files, and need no build step.
+ * Manifest checks: the package must be a valid DSH bundle (the bundle manifest
+ * contract), ship exactly the right files, and need no build step.
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -14,35 +14,75 @@ import {
   isFile,
   packagePath,
   parseVersion,
+  readJsonFile,
   readPackageJson,
   readTextFile,
   relativeToPackage,
   semverSatisfies,
   walkFiles,
-} from './helpers.js'
+} from './dsh_helpers.js'
 
-/** Content the bundle cannot work without, and that `files` must therefore include. */
+/** The 26 vendored paths pinned by upstream.lock.json (the package's content contract). */
+const LOCKED_ADAPTED_FILES = readJsonFile(packagePath('upstream.lock.json')).files.map((entry) => entry.adapted)
+
+/**
+ * Content the bundle cannot work without, and that `files` must therefore include:
+ * every locked upstream path plus the relocated host modules, the active guide and
+ * record, the retained merge-source history, and the provenance/legal files.
+ */
 const REQUIRED_FILES = [
-  'index.js',
-  'skills-host.js',
-  'reviewer-host.js',
-  'reviewer-tools.js',
-  'cordis.patch.yml',
-  'skills',
-  'agents',
-  'resources',
-  'locale',
-  'icon.svg',
+  ...LOCKED_ADAPTED_FILES,
+  'adapters/dsh/skills-host.js',
+  'adapters/dsh/reviewer-host.js',
+  'adapters/dsh/reviewer-tools.js',
+  'adapters/dsh/cordis.patch.yml',
+  'adapters/dsh/icon.svg',
+  'adapters/dsh/locale/en.json',
+  'adapters/dsh/locale/zh.json',
+  'docs/assets/workflow.svg',
+  'docs/assets/protocol.svg',
   'README.md',
+  'README.zh-CN.md',
+  'TESTING.md',
+  'docs/dsh.md',
+  'ADAPTER-NOTES.md',
   'ADAPTATIONS.md',
+  'E2E-VERIFICATION.md',
+  'upstream.lock.json',
   'LICENSE',
   'NOTICE',
-  'scripts',
-  'upstream.lock.json',
+  'CHANGELOG.md',
 ]
 
 /** Files npm always packs regardless of `files`; not an omission when unlisted. */
 const ALWAYS_SHIPPED = new Set(['package.json', 'README.md', 'LICENSE', 'NOTICE', 'CHANGELOG.md'])
+
+/**
+ * Repository-only trees: the test suites, history, examples and automation. A `files`
+ * entry must never cover these, even when a path is currently empty or already gone.
+ */
+const FORBIDDEN_TREES = [
+  ['tests/**', 'tests/unit/dsh_helpers.js'],
+  ['test/**', 'test/README.md'],
+  ['examples/**', 'examples/README.md'],
+  ['docs/testing/**', 'docs/testing/RESULTS-464DB.md'],
+  ['diagrams/**', 'diagrams/workflow.svg'],
+  ['scripts/**', 'scripts/README.md'],
+  ['.github/**', '.github/workflows/ci.yml'],
+  ['.dev/**', '.dev/docs/concepts_brief.md'],
+]
+
+/** Specific repository-only host tools and diagram sources that must stay unpacked. */
+const FORBIDDEN_FILES = [
+  'adapters/dsh/check_upstream.mjs',
+  'adapters/dsh/render_diagrams.mjs',
+  'docs/assets/README.md',
+  'docs/assets/workflow.d2',
+  'docs/assets/protocol.d2',
+]
+
+/** Diagram maps never ship, and no `*.EGM.md` map may be packed. */
+const FORBIDDEN_PATTERN_PROBES = ['docs/assets/workflow.EGM.md', 'implementation.EGM.md', 'EGM.md']
 
 /** Return an exports target for one subpath key, accepting string and conditional forms. */
 function exportTarget(exportsField, key) {
@@ -90,7 +130,9 @@ test('manifest identity fields describe the dsh-egm bundle', () => {
     problems.push('description must be a non-empty string (it is the plugin manager fallback text)')
   }
   if (manifest.type !== 'module') problems.push(`type must be "module" for the ES module entry point; found ${JSON.stringify(manifest.type)}`)
-  if (manifest.main !== 'index.js') problems.push(`main must be "index.js"; found ${JSON.stringify(manifest.main)}`)
+  if (manifest.main !== 'adapters/dsh/skills-host.js') {
+    problems.push(`main must be "adapters/dsh/skills-host.js"; found ${JSON.stringify(manifest.main)}`)
+  }
   if (typeof manifest.main === 'string' && !isFile(packagePath(manifest.main))) {
     problems.push(`main entry ${JSON.stringify(manifest.main)} does not exist`)
   }
@@ -114,7 +156,7 @@ test('manifest exports expose every runtime resource DSH resolves through Node',
       problems.push('exports["."] is missing; the bundle plugin row resolves the package main through it')
     } else {
       const normalised = normaliseTarget(rootTarget)
-      if (normalised !== normaliseTarget(manifest.main ?? 'index.js')) {
+      if (normalised !== normaliseTarget(manifest.main ?? 'adapters/dsh/skills-host.js')) {
         problems.push(`exports["."] (${JSON.stringify(rootTarget)}) must resolve to main (${JSON.stringify(manifest.main)})`)
       }
       if (!isFile(packagePath(normalised))) problems.push(`exports["."] target ${JSON.stringify(normalised)} does not exist`)
@@ -133,7 +175,7 @@ test('manifest exports expose every runtime resource DSH resolves through Node',
         for (const language of ['en', 'zh']) {
           const resolved = normaliseTarget(localeTarget).replace('*', language)
           if (!isFile(packagePath(resolved))) {
-            problems.push(`exports[${JSON.stringify(localeKey)}] does not resolve locale/${language}.json (looked for ${JSON.stringify(resolved)})`)
+            problems.push(`exports[${JSON.stringify(localeKey)}] does not resolve adapters/dsh/locale/${language}.json (looked for ${JSON.stringify(resolved)})`)
           }
         }
       }
@@ -155,6 +197,28 @@ test('manifest exports expose every runtime resource DSH resolves through Node',
         problems.push(`package.json "icon" points at missing file ${JSON.stringify(manifestIcon)}`)
       }
     }
+    // Every public subpath key is preserved; only the targets move under adapters/dsh/.
+    const expectedTargets = {
+      './skills-host': 'adapters/dsh/skills-host.js',
+      './reviewer-host': 'adapters/dsh/reviewer-host.js',
+      './reviewer-tools': 'adapters/dsh/reviewer-tools.js',
+      './locale/*.json': 'adapters/dsh/locale/*.json',
+      './icon': 'adapters/dsh/icon.svg',
+      './package.json': 'package.json',
+    }
+    const expectedKeys = ['.', ...Object.keys(expectedTargets)].sort()
+    const actualKeys = Object.keys(exportsField).sort()
+    if (JSON.stringify(actualKeys) !== JSON.stringify(expectedKeys)) {
+      problems.push(`exports keys must stay [${expectedKeys.join(', ')}]; found [${actualKeys.join(', ')}]`)
+    }
+    for (const [key, target] of Object.entries(expectedTargets)) {
+      const actual = exportTarget(exportsField, key)
+      if (actual === undefined) {
+        problems.push(`exports[${JSON.stringify(key)}] is missing; every public subpath key must be preserved`)
+      } else if (normaliseTarget(actual) !== target) {
+        problems.push(`exports[${JSON.stringify(key)}] must target ${JSON.stringify(target)}; found ${JSON.stringify(actual)}`)
+      }
+    }
   }
   assert.equal(problems.length, 0, `exports problems:${formatList(problems)}`)
 })
@@ -171,6 +235,10 @@ test('dsh.bundle.patch declares a patch that inserts this package by name', () =
     if (patchFiles === undefined || patchFiles.length === 0 || patchFiles.some((file) => typeof file !== 'string')) {
       problems.push('dsh.bundle.patch must be a file path or a list of file paths')
     } else {
+      const expectedPatch = 'adapters/dsh/cordis.patch.yml'
+      if (patchFiles.length !== 1 || normaliseTarget(patchFiles[0]) !== expectedPatch) {
+        problems.push(`dsh.bundle.patch must be ${JSON.stringify(`./${expectedPatch}`)}; found ${JSON.stringify(declared)}`)
+      }
       for (const declaredPath of patchFiles) {
         const absolute = packagePath(normaliseTarget(declaredPath))
         if (!isFile(absolute)) {
@@ -235,37 +303,48 @@ test('files lists the shipped content and every entry exists', () => {
       if (/[*?]/u.test(normalised)) continue
       if (!existsSync(packagePath(normalised))) problems.push(`files entry ${JSON.stringify(entry)} does not exist`)
     }
-    for (const required of REQUIRED_FILES) {
-      if (!isCovered(required, files)) problems.push(`files must include ${JSON.stringify(required)}`)
-    }
   }
   assert.equal(problems.length, 0, `files problems:${formatList(problems)}`)
 })
 
-test('files covers every runtime file that is not always shipped', () => {
+test('files packs every required runtime, guide and provenance file', () => {
   const manifest = readPackageJson()
   const files = Array.isArray(manifest.files) ? manifest.files : []
-  const uncovered = []
-  for (const absolute of walkFiles(PACKAGE_ROOT)) {
-    const relativePath = relativeToPackage(absolute)
-    if (ALWAYS_SHIPPED.has(relativePath)) continue
-    // Development-only content is deliberately not packed: the JavaScript and Python suites,
-    // recorded examples and GitHub workflows live in the repository alone. Everything else that is
-    // not always shipped must be covered by a `files` entry.
-    if (relativePath.startsWith('test/')) continue
-    if (relativePath.startsWith('tests/')) continue
-    if (relativePath.startsWith('docs/testing/')) continue
-    if (relativePath.startsWith('examples/')) continue
-    if (relativePath.startsWith('.github/')) continue
-    if (relativePath.split('/').some((segment) => segment.startsWith('.'))) continue
-    if (relativePath.endsWith('.tgz') || relativePath.endsWith('.log') || relativePath.endsWith('pnpm-lock.yaml')) continue
-    if (!isCovered(relativePath, files)) uncovered.push(relativePath)
-  }
+  assert.equal(
+    LOCKED_ADAPTED_FILES.length,
+    26,
+    `upstream.lock.json must pin the 26 adapted files; found ${LOCKED_ADAPTED_FILES.length}`,
+  )
+  const uncovered = REQUIRED_FILES.filter((required) => !isCovered(required, files))
   assert.equal(
     uncovered.length,
     0,
-    `runtime files missing from "files" (npm pack would omit them; add a files entry or remove them):${formatList(uncovered)}`,
+    `required files missing from "files" (npm pack would omit them; add a files entry or restore the file):${formatList(uncovered)}`,
   )
+})
+
+test('files never packs repository-only development, history or internal files', () => {
+  const manifest = readPackageJson()
+  const files = Array.isArray(manifest.files) ? manifest.files : []
+  const problems = []
+  for (const [tree, probe] of FORBIDDEN_TREES) {
+    if (isCovered(probe, files)) problems.push(`${tree} must never be packed; a files entry covers ${JSON.stringify(probe)}`)
+  }
+  for (const repositoryOnly of [...FORBIDDEN_FILES, ...FORBIDDEN_PATTERN_PROBES]) {
+    if (isCovered(repositoryOnly, files)) problems.push(`${JSON.stringify(repositoryOnly)} is repository-only; a files entry covers it`)
+  }
+  // Inversion: every repository file that is neither required nor always shipped must stay unpacked.
+  const required = new Set(REQUIRED_FILES)
+  const packed = []
+  for (const absolute of walkFiles(PACKAGE_ROOT)) {
+    const relativePath = relativeToPackage(absolute)
+    if (required.has(relativePath) || ALWAYS_SHIPPED.has(relativePath)) continue
+    if (isCovered(relativePath, files)) packed.push(relativePath)
+  }
+  if (packed.length > 0) {
+    problems.push(`repository-only files covered by "files" (remove the entry):${formatList(packed.sort())}`)
+  }
+  assert.equal(problems.length, 0, `packed-file problems:${formatList(problems)}`)
 })
 
 test('plain JavaScript ships directly and needs no install-time build', () => {

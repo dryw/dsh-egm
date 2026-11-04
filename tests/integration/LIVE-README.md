@@ -34,7 +34,7 @@ of native slash invocations of the three skills. Each paid test writes
 package's own `upstream.lock.json`, so an explicitly selected tarball records the
 pin it was packed from rather than this checkout's. The workflow test writes
 `checks.json` with every check's result, then fails if any check failed. See
-[VERIFICATION.md](../../VERIFICATION.md) for how to read it.
+[TESTING.md](../../TESTING.md#live-results) for how to read it.
 
 ## Manual interactive run
 
@@ -51,8 +51,8 @@ Upstream requires a real human approval pause. Use the same tarball.
    the terminal UI with `dsh tui --patch`. Run that command with
    `DEEPSEEK_API_KEY` exported.
 2. Type `/egm-brainstorm`, then the feature paragraph and author line from
-   `fixtures/live-prompts/google-codex-line-count-v1.txt`, without its approval
-   paragraph. Answer every gate yourself.
+   `fixtures/dsh_line_count_prompt.txt`, without its approval paragraph. Answer
+   every gate yourself.
 3. Type `/egm-draft concepts_brief.md` and answer every gate yourself.
 4. Type `/egm-review design_draft.md` and choose Step `uninterrupted`.
 5. Quit, then run `python tests/integration/test_dsh_live.py check <dir>`.

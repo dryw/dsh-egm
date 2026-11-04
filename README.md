@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon.svg?v=2" width="96" height="96" alt="dsh-egm mark: the elephant's front half and the goldfish's tail cut at the split">
+  <img src="adapters/dsh/icon.svg?v=2" width="96" height="96" alt="dsh-egm mark: the elephant's front half and the goldfish's tail cut at the split">
 </p>
 
 <h1 align="center">🐘 dsh-egm 🐟</h1>
@@ -83,7 +83,7 @@ dsh plugin --profile web add dsh-egm
 
 Restart Harness, then check **Settings → Plugins** to confirm it's enabled.
 
-The bundle declares the read-only `egm-reviewer` preset, but it does not create the host's agent-preset service. `egm_reviewer` needs a profile that composes an `agentPresets` registry resolving a valid default preset, plus an in-process `spawn` subagent provider. Harness `web` profiles compose an agent-preset registry with a `standard` default; a bare SDK profile does not. Without them `egm_reviewer` fails closed with an actionable error (`the agent-presets service is not composed` for the missing registry). Package-supplied setup for a genuinely missing registry is not implemented yet, so a bare SDK profile cannot run reviews in this release.
+The bundle declares the read-only `egm-reviewer` preset, but it does not create the host's agent-preset service. `egm_reviewer` needs a profile that composes an `agentPresets` registry resolving a valid default preset, plus an in-process `spawn` subagent provider. Harness `web` profiles compose an agent-preset registry with a `standard` default; a bare SDK profile does not. Without them `egm_reviewer` fails closed with an actionable error (`the agent-presets service is not composed` for the missing registry); the [host guide](docs/dsh.md#host-prerequisites-and-current-limit) lists the exact refusals. Package-supplied setup for a genuinely missing registry is not implemented yet, so a bare SDK profile cannot run reviews in this release.
 
 For local development, you can install from a checkout instead:
 
@@ -135,7 +135,7 @@ You can also invoke the skills individually; the full sequence isn't mandatory.
 
 ## How it works
 
-![Elephant Goldfish simplified workflow](diagrams/workflow.svg)
+![Elephant Goldfish simplified workflow](docs/assets/workflow.svg)
 
 *The Elephant remembers. The Goldfish starts fresh. You stay in control.*
 
@@ -143,7 +143,7 @@ The Elephant carries the project conversation forward. The Goldfish reviewers ap
 
 A structured `/egm-review` uses five stages: **Initial Zoom Out**, **Comprehension**, **Design Critique**, **Intermediate Zoom Out**, and **Implementation Readiness**. Different reviewers look at the design from different angles, and their findings become things you can resolve, not decisions the agents make on your behalf.
 
-For the fuller protocol, including the optional bootstrap step, see the [detailed protocol diagram](diagrams/protocol.svg).
+For the fuller protocol, including the optional bootstrap step, see the [detailed protocol diagram](docs/assets/protocol.svg).
 
 ### What this plugin adds
 
@@ -156,7 +156,7 @@ Google's upstream project supplies the EGM skills, reviewer personas, and design
 
 **What “read-only” does and doesn't mean:** it prevents Goldfish reviewers from using write, shell, and other disallowed tools in the supported Harness configuration. It doesn't mean reviewers are unable to see project files: they can read and search material available to their permitted tools. Don't treat the reviewer preset as a confidentiality boundary, and check what project material you expose to it.
 
-The package declares `>=0.2.1-rc.5 <0.3.0`; native replay evidence covers the pinned 0.2.1-rc.5 runtime on Linux, rather than every version in that range. Isolation behavior depends on the Harness implementation of tool restrictions and child-agent spawning APIs. The [verification guide](VERIFICATION.md) describes the enforcement layers, tests, and their limits. [ADAPTATIONS.md](ADAPTATIONS.md) explains what comes from Google and what this package adds.
+The package declares `>=0.2.1-rc.5 <0.3.0`; native replay evidence covers the pinned 0.2.1-rc.5 runtime on Linux, rather than every version in that range. Isolation behavior depends on the Harness implementation of tool restrictions and child-agent spawning APIs. The [host guide](docs/dsh.md) describes the enforcement layers, dispatch rules and their limits; the [testing record](TESTING.md) lists the tests and current results. [ADAPTATIONS.md](ADAPTATIONS.md) explains what comes from Google and what this package adds.
 
 ## Upstream tracking and adapter versions
 
@@ -164,7 +164,7 @@ The package declares `>=0.2.1-rc.5 <0.3.0`; native replay evidence covers the pi
 
 We monitor upstream releases and material changes, prefer tagged revisions when practical, and may adopt a tested interim commit. Each update requires content checks and a documented runtime assessment; advancing the pin does not carry forward live acceptance. Adapter fixes and DSH compatibility changes follow this package's semantic versioning, independently of upstream EGM releases.
 
-[VERIFICATION.md](VERIFICATION.md) separates content checks, keyless replay, and historical live evidence. Published 0.2.4 live-model acceptance and Agent Team compatibility remain pending. Recognized upstream support is an EGM maintainer decision, tracked in [EGM #240](https://github.com/google/elephant-goldfish-model/issues/240). If unchanged 0.2.4 passes its exact-artifact acceptance, no new release is needed solely to record those results.
+[TESTING.md](TESTING.md) separates content checks, keyless replay, and historical live evidence. Published 0.2.4 live-model acceptance and Agent Team compatibility remain pending. Recognized upstream support is an EGM maintainer decision, tracked in [EGM #240](https://github.com/google/elephant-goldfish-model/issues/240). If unchanged 0.2.4 passes its exact-artifact acceptance, no new release is needed solely to record those results.
 
 ## Included skills
 
@@ -226,17 +226,18 @@ I'm especially interested in whether the plugin installed cleanly, whether the G
 
 ## For maintainers and curious readers
 
-- [VERIFICATION.md](VERIFICATION.md) — reviewer isolation, reproducible tests, CI, and evidence.
+- [docs/dsh.md](docs/dsh.md) — the host guide: install/invoke, manifest changes, path roots, dispatch and stage sequencing, reviewer isolation and refusals.
+- [TESTING.md](TESTING.md) — the requirement map, harness test record and current limits.
 - [E2E-VERIFICATION.md](E2E-VERIFICATION.md) — the recorded design workflow and its limitations.
-- [ADAPTATIONS.md](ADAPTATIONS.md) and [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — upstream provenance and Harness-specific mechanics.
+- [ADAPTATIONS.md](ADAPTATIONS.md) and [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — upstream provenance and the detailed harness notes this guide consolidates.
 - [CHANGELOG.md](CHANGELOG.md) — release history.
-- [diagrams/](diagrams/README.md) — the workflow diagrams and their sources.
+- [docs/assets/](docs/assets/README.md) — the workflow diagrams, their D2 sources and the renderer.
 
 To run the package checks from a checkout:
 
 ```bash
-node --test
-node scripts/check-upstream.mjs
+npm test
+node adapters/dsh/check_upstream.mjs
 ```
 
 The upstream drift check reports changes; it never modifies or replaces the vendored files.

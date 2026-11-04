@@ -9,12 +9,12 @@
  * tell whether upstream changed without downloading the whole repository.
  *
  * Usage:
- *   node scripts/check-upstream.mjs                       check the upstream default branch
- *   node scripts/check-upstream.mjs --ref <sha-or-branch> check a specific upstream ref
- *   node scripts/check-upstream.mjs --json                machine-readable report
- *   node scripts/check-upstream.mjs --update-lock         rewrite the lock for the checked ref
- *   node scripts/check-upstream.mjs --update-lock --source <checkout>
- *                                                         rewrite the lock from a local clone
+ *   node adapters/dsh/check_upstream.mjs                       check the upstream default branch
+ *   node adapters/dsh/check_upstream.mjs --ref <sha-or-branch> check a specific upstream ref
+ *   node adapters/dsh/check_upstream.mjs --json                machine-readable report
+ *   node adapters/dsh/check_upstream.mjs --update-lock         rewrite the lock for the checked ref
+ *   node adapters/dsh/check_upstream.mjs --update-lock --source <checkout>
+ *                                                              rewrite the lock from a local clone
  *
  * Exit codes: 0 = up to date, 1 = drift (upstream moved), 2 = error. `--update-lock`
  * exits 0 after writing the lock (or 2 on error) and always writes for the *checked*
@@ -29,11 +29,14 @@
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-/** Package root (the directory that owns package.json and upstream.lock.json). */
-export const PACKAGE_ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
+/**
+ * Package root (the directory that owns package.json and upstream.lock.json).
+ * This module lives in adapters/dsh/, so the package root is two levels up.
+ */
+export const PACKAGE_ROOT = fileURLToPath(new URL('../../', import.meta.url))
 export const LOCK_PATH = join(PACKAGE_ROOT, 'upstream.lock.json')
 export const DEFAULT_REPOSITORY = 'google/elephant-goldfish-model'
 export const DEFAULT_BRANCH = 'main'
@@ -294,13 +297,13 @@ export function renderReport(result, { updateNote } = {}) {
   }
   lines.push('')
   lines.push('Next steps: re-adapt the affected files for DeepSeek Harness,')
-  lines.push('then run `node scripts/check-upstream.mjs --update-lock` and `node --test`.')
+  lines.push('then run `node adapters/dsh/check_upstream.mjs --update-lock` and `npm test`.')
   return `${lines.join('\n')}\n`
 }
 
 const HELP = `Check google/elephant-goldfish-model for changes since upstream.lock.json
 
-Usage: node scripts/check-upstream.mjs [options]
+Usage: node adapters/dsh/check_upstream.mjs [options]
 
 Options:
   --ref <sha-or-branch>  upstream ref to check (default: the locked branch)

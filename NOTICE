@@ -26,7 +26,7 @@ under the terms of the Apache License, Version 2.0:
   - resources/document_standards/*.md
   - resources/README.md
 
-The plugin icon (icon.svg) composes the "elephant" and "fish" glyphs from
+The plugin icon (adapters/dsh/icon.svg) composes the "elephant" and "fish" glyphs from
 Material Design Icons by Pictogrammers (https://pictogrammers.com/), released
 under the Pictogrammers Free License (icons: Apache License, Version 2.0).
 The split-disc composition, colours and seam-cut treatment are original to

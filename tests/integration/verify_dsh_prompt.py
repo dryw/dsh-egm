@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.request import urlopen
 
 root = Path(__file__).resolve().parent
-meta = json.loads((root / "provenance.json").read_text(encoding="utf-8"))
+meta = json.loads((root / "fixtures/dsh_line_count_provenance.json").read_text(encoding="utf-8"))
 url = f"{meta['source_repository'].replace('https://github.com/', 'https://raw.githubusercontent.com/')}/{meta['source_commit']}/{meta['source_path']}"
 with urlopen(url, timeout=30) as response:
     source = response.read()
@@ -17,5 +17,5 @@ assignments = [node for node in ast.walk(function) if isinstance(node, ast.Assig
 assert len(assignments) == 1
 prompt = ast.literal_eval(assignments[0].value).encode("utf-8")
 assert hashlib.sha256(prompt).hexdigest() == meta["prompt_sha256"]
-assert prompt == (root / "google-codex-line-count-v1.txt").read_bytes()
+assert prompt == (root / "fixtures/dsh_line_count_prompt.txt").read_bytes()
 print(f"PASS: Git blob {blob}; {len(prompt)} prompt bytes; SHA-256 {meta['prompt_sha256']}")

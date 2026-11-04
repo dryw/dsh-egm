@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 /**
- * Render the D2 diagram sources in `diagrams/` to the SVGs the README embeds,
+ * Render the D2 diagram sources in `docs/assets/` to the SVGs the README embeds,
  * and add accessibility metadata D2 does not emit: an explicit pixel size,
  * role="img", aria-label, and a <title>.
  *
  * The diagrams are authored in D2 (https://d2lang.com) and committed as D2
  * source, so edit the `.d2` files and re-run:
  *
- *   node diagrams/render.mjs
+ *   node adapters/dsh/render_diagrams.mjs
  *
  * A D2 CLI is required. It is not an npm dependency of this package: install it
  * from https://d2lang.com/tour/install, or point at a downloaded binary:
  *
- *   D2=/path/to/d2 node diagrams/render.mjs
+ *   D2=/path/to/d2 node adapters/dsh/render_diagrams.mjs
  *
  * Themes:
  * - Both sources declare `vars.d2-config` with `theme-id: 0`,
@@ -30,17 +30,18 @@
  */
 import { spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
+// This module lives in adapters/dsh/, so the package root is two levels up.
+const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const D2 = process.env.D2 ?? 'd2'
 
 /** One render target: D2 source, SVG output, D2 flags, and accessibility metadata. */
 const TARGETS = [
   {
-    source: join(ROOT, 'diagrams', 'workflow.d2'),
-    output: join(ROOT, 'diagrams', 'workflow.svg'),
+    source: join(ROOT, 'docs', 'assets', 'workflow.d2'),
+    output: join(ROOT, 'docs', 'assets', 'workflow.svg'),
     // No flags: the source's vars.d2-config sets theme-id 0 + dark-theme-id 200.
     d2Args: [],
     title: 'Elephant Goldfish — Simplified Workflow',
@@ -51,8 +52,8 @@ const TARGETS = [
       'approve implementation or send the work back for revision.',
   },
   {
-    source: join(ROOT, 'diagrams', 'protocol.d2'),
-    output: join(ROOT, 'diagrams', 'protocol.svg'),
+    source: join(ROOT, 'docs', 'assets', 'protocol.d2'),
+    output: join(ROOT, 'docs', 'assets', 'protocol.svg'),
     // No flags: the source's vars.d2-config sets theme-id 0, dark-theme-id 200 and pad 55.
     d2Args: [],
     title: 'Elephant-Goldfish — Detailed Development Protocol',

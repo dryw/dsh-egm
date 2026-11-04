@@ -7,24 +7,8 @@ import tarfile
 
 import pytest
 
-from test_dsh_live import (RUNTIME, REPORTS, assert_required_reads, assert_stage_order,
+from test_dsh_live import (REPORTS, assert_required_reads, assert_stage_order,
                            child_traces, jsonl, status_only_difference)
-
-
-def response(text):
-    # Native replay consumes the same block stream as a model provider.
-    return {"kind": "chunks", "chunks": [{"type": "block-start", "index": 0, "blockType": "text"},
-            {"type": "text-delta", "index": 0, "text": text},
-            {"type": "block-end", "index": 0, "block": {"type": "text", "text": text}},
-            {"type": "finish", "reason": {"kind": "stop"}}]}
-
-
-def replay(root, entries, children=()):
-    path = root / "replay.json"
-    path.write_text(json.dumps(entries), encoding="utf-8")
-    return [{"id": "keyless-provider", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-llm-replay/lib/index.js"),
-             "config": {"file": str(path), "overrideFile": str(path), "childFiles": [str(p) for p in children],
-                        "providers": [{"id": "egm-replay", "models": [{"id": "fixed", "contextWindow": 1048576}]}]}}]
 
 
 PERSONA = "/pkg/node_modules/dsh-egm/agents/zoom_out.md"

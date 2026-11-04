@@ -15,7 +15,7 @@ import {
   readTextFile,
   relativeToPackage,
   referencedResourcePaths,
-} from './helpers.js'
+} from './dsh_helpers.js'
 
 const LOOKS_LIKE_FILE = /\.[A-Za-z0-9]+$/u
 

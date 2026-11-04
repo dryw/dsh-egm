@@ -12,8 +12,8 @@
 ## 0.2.3 — 2026-11-02
 
 - Upstream pin refresh (`403d888…` → `a119668…`); no content changes.
-- Docs and CI only: Chinese README, diagrams, [VERIFICATION.md](VERIFICATION.md); no runtime
-  changes.
+- Docs and CI only: Chinese README, diagrams, [TESTING.md](TESTING.md) (then `VERIFICATION.md`); no
+  runtime changes.
 
 ## 0.2.2 — 2026-11-01
 

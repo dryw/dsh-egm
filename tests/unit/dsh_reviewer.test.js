@@ -9,8 +9,8 @@ import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 
 const require = createRequire(import.meta.url)
-const reviewer = await import(pathToFileURL(require.resolve('../reviewer-host.js')).href)
-const tools = await import(pathToFileURL(require.resolve('../reviewer-tools.js')).href)
+const reviewer = await import(pathToFileURL(require.resolve('../../adapters/dsh/reviewer-host.js')).href)
+const tools = await import(pathToFileURL(require.resolve('../../adapters/dsh/reviewer-tools.js')).href)
 
 /** Minimal Cordis-like context for the reviewer tool plugin. */
 function createReviewerContext(options = {}) {

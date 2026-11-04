@@ -25,7 +25,7 @@ from upstream_contract import assert_upstream_artifacts, assert_upstream_child_c
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
-RUNTIME = Path(os.environ.get("EGM_TEST_RUNTIME", str(HERE / "runtime"))).resolve()
+RUNTIME = Path(os.environ.get("EGM_TEST_RUNTIME", str(HERE / "dsh-ci"))).resolve()
 MODEL = os.environ.get("DSH_EGM_MODEL")
 TARBALL = os.environ.get("DSH_EGM_TARBALL")
 LIVE = pytest.mark.skipif(os.environ.get("DSH_EGM_LIVE") != "1", reason="Set DSH_EGM_LIVE=1 for paid tests")
@@ -76,7 +76,7 @@ def install(root, tarball, profile):
     """Install a tarball into a disposable DSH_HOME, as a user would."""
     home = root / "home"
     binary = RUNTIME / "node_modules/.bin/dsh"
-    assert binary.is_file(), "Install tests/integration/runtime dependencies first"
+    assert binary.is_file(), "Install tests/integration/dsh-ci dependencies first"
     result = subprocess.run([str(binary), "plugin", "--profile", profile, "add", str(tarball)],
                             cwd=root, env=private_env(home), capture_output=True, text=True, timeout=120)
     (root / "install.log").write_text(result.stdout + result.stderr, encoding="utf-8")
@@ -114,7 +114,7 @@ def profile_rows(root, provider_rows):
             {"insert": [
                 {"id": "agent-preset-registry", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-agent-preset-registry/lib/index.js"), "config": {"default": "standard"}},
                 {"id": "preset-standard", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-agent-preset/lib/index.js"), "config": {"id": "standard", "plugins": []}},
-                {"id": "live-observer", "name": str(HERE / "observer.mjs")}, *provider_rows,
+                {"id": "live-observer", "name": str(HERE / "dsh_observer.mjs")}, *provider_rows,
             ]}]
 
 
@@ -481,7 +481,7 @@ def test_fresh_context_isolation(installed_plugin, tmp_path):
 
 @LIVE
 def test_brainstorm_draft_review(installed_plugin, tmp_path):
-    prompt = (HERE / "fixtures/live-prompts/google-codex-line-count-v1.txt").read_bytes().decode("utf-8")
+    prompt = (HERE / "fixtures/dsh_line_count_prompt.txt").read_bytes().decode("utf-8")
     run = run_dsh(installed_plugin, tmp_path, [{"type": "text", "text": INVOCATIONS}, {"type": "text", "text": prompt}])
     summary = run_checks(run)
     assert not failures(summary), f"{failures(summary)}; see {tmp_path / 'checks.json'}"

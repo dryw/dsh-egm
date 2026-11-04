@@ -1,7 +1,8 @@
 /**
- * Plugin checks: `index.js` must load as a plain ES module with no installed
- * dependencies, register every bundled skill through `ctx.skills.register`,
- * and hold its frontmatter parser to the strict DESIGN.md contract.
+ * Plugin checks: `adapters/dsh/skills-host.js` must load as a plain ES module
+ * with no installed dependencies, register every bundled skill through
+ * `ctx.skills.register`, and hold its frontmatter parser to the strict
+ * vendored-upstream contract.
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -19,11 +20,11 @@ import {
   parseFrontmatter,
   readTextFile,
   relativeToPackage,
-} from './helpers.js'
+} from './dsh_helpers.js'
 
-const INDEX_PATH = join(PACKAGE_ROOT, 'index.js')
+const SKILLS_HOST_PATH = join(PACKAGE_ROOT, 'adapters', 'dsh', 'skills-host.js')
 const SKILL_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u
-const plugin = await import(pathToFileURL(INDEX_PATH).href)
+const plugin = await import(pathToFileURL(SKILLS_HOST_PATH).href)
 
 /** Capture console output so activation logs and skip warnings are inspectable. */
 function captureConsole() {
@@ -69,14 +70,14 @@ function createStubContext() {
 
 const skillPath = (directory) => join(SKILLS_DIR, directory, 'SKILL.md')
 
-test('index.js loads as an ES module with the DSH plugin surface', () => {
-  assert.equal(typeof plugin.name, 'string', 'index.js must export the Cordis plugin name')
-  assert.ok(plugin.name.length > 0, 'index.js plugin name must not be empty')
-  assert.ok(Array.isArray(plugin.inject), 'index.js must export an inject list')
-  assert.ok(plugin.inject.includes('skills'), 'index.js must inject "skills" or ctx.skills is unavailable')
-  assert.equal(typeof plugin.apply, 'function', 'index.js must export apply(ctx)')
-  assert.equal(typeof plugin.parseSkillDocument, 'function', 'index.js must export its frontmatter parser (tested below)')
-  assert.equal(typeof plugin.loadBundledSkill, 'function', 'index.js must export its bundled-skill loader (tested below)')
+test('adapters/dsh/skills-host.js loads as an ES module with the DSH plugin surface', () => {
+  assert.equal(typeof plugin.name, 'string', 'skills-host.js must export the Cordis plugin name')
+  assert.ok(plugin.name.length > 0, 'skills-host.js plugin name must not be empty')
+  assert.ok(Array.isArray(plugin.inject), 'skills-host.js must export an inject list')
+  assert.ok(plugin.inject.includes('skills'), 'skills-host.js must inject "skills" or ctx.skills is unavailable')
+  assert.equal(typeof plugin.apply, 'function', 'skills-host.js must export apply(ctx)')
+  assert.equal(typeof plugin.parseSkillDocument, 'function', 'skills-host.js must export its frontmatter parser (tested below)')
+  assert.equal(typeof plugin.loadBundledSkill, 'function', 'skills-host.js must export its bundled-skill loader (tested below)')
 })
 
 test('apply() registers exactly the seven bundled EGM skills', () => {
@@ -84,7 +85,7 @@ test('apply() registers exactly the seven bundled EGM skills', () => {
   assert.deepEqual(
     directories,
     [...EXPECTED_SKILLS].sort(),
-    `bundled skill directories must match DESIGN.md exactly; present: [${directories.join(', ')}]`,
+    `bundled skill directories must match the vendored upstream set exactly; present: [${directories.join(', ')}]`,
   )
   const { context, registered, effects } = createStubContext()
   const capture = captureConsole()
@@ -198,37 +199,39 @@ test('parseSkillDocument accepts every bundled SKILL.md and strips the frontmatt
 })
 
 test('parseSkillDocument folds upstream block scalars and rejects YAML lists', () => {
-  const blockScalar = plugin.parseSkillDocument(readTextFile(join(FIXTURES_DIR, 'malformed-block-scalar.md')))
+  const blockScalar = plugin.parseSkillDocument(readTextFile(join(FIXTURES_DIR, 'folded_description.md')))
   assert.equal(
     blockScalar.meta?.description,
-    'This folded block scalar spans multiple lines, which the strict DESIGN.md frontmatter contract forbids.',
+    'This folded block scalar spans multiple lines, which the strict frontmatter contract accepts and the host folds to one line.',
     'a folded upstream description must collapse to one line',
   )
   assert.throws(
-    () => plugin.parseSkillDocument(readTextFile(join(FIXTURES_DIR, 'malformed-list.md'))),
+    () => plugin.parseSkillDocument(readTextFile(join(FIXTURES_DIR, 'invalid_list.md'))),
     /unsupported frontmatter line|invalid boolean/u,
     'YAML lists are not part of the supported frontmatter subset',
   )
-  const noFrontmatter = plugin.parseSkillDocument(readTextFile(join(FIXTURES_DIR, 'no-frontmatter.md')))
+  const noFrontmatter = plugin.parseSkillDocument(readTextFile(join(FIXTURES_DIR, 'no_frontmatter.md')))
   assert.equal(noFrontmatter.meta?.name, undefined, 'a document without frontmatter must not yield a skill name')
 })
 
 test('a malformed bundled skill fails activation instead of silently shipping a partial install', async () => {
   const temporaryPackage = mkdtempSync(join(tmpdir(), 'dsh-egm-plugin-test-'))
   try {
-    copyFileSync(INDEX_PATH, join(temporaryPackage, 'index.js'))
-    copyFileSync(join(PACKAGE_ROOT, 'skills-host.js'), join(temporaryPackage, 'skills-host.js'))
+    // Copy the host module into the same two-level layout so its ROOT rebases to the temp package root.
+    const hostDirectory = join(temporaryPackage, 'adapters', 'dsh')
+    mkdirSync(hostDirectory, { recursive: true })
+    copyFileSync(SKILLS_HOST_PATH, join(hostDirectory, 'skills-host.js'))
     writeFileSync(
       join(temporaryPackage, 'package.json'),
       `${JSON.stringify({ name: 'dsh-egm-fixture', version: '0.0.0', type: 'module' }, null, 2)}\n`,
     )
     const skillsRoot = join(temporaryPackage, 'skills')
     mkdirSync(join(skillsRoot, 'egm-valid'), { recursive: true })
-    writeFileSync(join(skillsRoot, 'egm-valid', 'SKILL.md'), readTextFile(join(FIXTURES_DIR, 'valid-skill.md')))
+    writeFileSync(join(skillsRoot, 'egm-valid', 'SKILL.md'), readTextFile(join(FIXTURES_DIR, 'valid_skill.md')))
     mkdirSync(join(skillsRoot, 'egm-broken'), { recursive: true })
-    writeFileSync(join(skillsRoot, 'egm-broken', 'SKILL.md'), readTextFile(join(FIXTURES_DIR, 'malformed-list.md')))
+    writeFileSync(join(skillsRoot, 'egm-broken', 'SKILL.md'), readTextFile(join(FIXTURES_DIR, 'invalid_list.md')))
 
-    const fixturePlugin = await import(pathToFileURL(join(temporaryPackage, 'index.js')).href)
+    const fixturePlugin = await import(pathToFileURL(join(hostDirectory, 'skills-host.js')).href)
     const { context } = createStubContext()
     assert.throws(
       () => fixturePlugin.apply(context),

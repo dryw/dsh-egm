@@ -8,13 +8,14 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+// This module lives in tests/unit/, so the package root is two levels up.
 /** Absolute path to the package root (the directory that owns package.json). */
-export const PACKAGE_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)))
+export const PACKAGE_ROOT = resolve(fileURLToPath(new URL('../../', import.meta.url)))
 export const PACKAGE_JSON_PATH = join(PACKAGE_ROOT, 'package.json')
 export const SKILLS_DIR = join(PACKAGE_ROOT, 'skills')
 export const RESOURCES_DIR = join(PACKAGE_ROOT, 'resources')
-export const LOCALE_DIR = join(PACKAGE_ROOT, 'locale')
-export const TEST_DIR = join(PACKAGE_ROOT, 'test')
+export const LOCALE_DIR = join(PACKAGE_ROOT, 'adapters', 'dsh', 'locale')
+export const TEST_DIR = join(PACKAGE_ROOT, 'tests', 'unit')
 export const FIXTURES_DIR = join(TEST_DIR, 'fixtures')
 
 /**
@@ -23,7 +24,7 @@ export const FIXTURES_DIR = join(TEST_DIR, 'fixtures')
  */
 export const DSH_RUNTIME_VERSION = process.env.DSH_RUNTIME_VERSION || '0.2.1-rc.5'
 
-/** Skill directories DESIGN.md requires (upstream names, kept exactly). */
+/** Skill directories the vendored upstream set requires (upstream names, kept exactly). */
 export const EXPECTED_SKILLS = Object.freeze([
   'egm-bootstrap',
   'egm-brainstorm',
@@ -55,28 +56,6 @@ export const SHARED_RESOURCE_PATHS = Object.freeze([
   'agents/style.md',
   'agents/synthesizer.md',
   'agents/zoom_out.md',
-])
-
-/** Frontmatter keys DESIGN.md gives a meaning to. Other keys are ignored by the host. */
-export const KNOWN_FRONTMATTER_KEYS = Object.freeze([
-  'name',
-  'description',
-  'license',
-  'disable-model-invocation',
-  'user-invocable',
-  'whenToUse',
-])
-
-/** Tokens that betray content copied from another agent harness (DESIGN.md quality bar). */
-export const FORBIDDEN_HARNESS_TOKENS = Object.freeze([
-  ['CLAUDE_PLUGIN_ROOT', /CLAUDE_PLUGIN_ROOT/i],
-  ['Claude Code', /Claude Code/i],
-  ['Antigravity', /Antigravity/i],
-  ['Codex', /\bCodex\b/i],
-  ['invoke_subagent', /invoke_subagent/i],
-  ['spawn_agent', /spawn_agent/i],
-  ['.claude-plugin', /\.claude-plugin/i],
-  ['distributions/', /distributions\//i],
 ])
 
 /** Turn an absolute path into the package-relative POSIX path used in failures. */
@@ -183,11 +162,13 @@ export function listContentMarkdownFiles() {
 }
 
 /**
- * Parse the strict, one-line-per-key YAML frontmatter block DESIGN.md requires.
+ * Parse the strict, one-line-per-key YAML frontmatter block the vendored
+ * upstream files use.
  *
- * This parser is deliberately independent of `index.js`: the tests must hold the
- * files to the contract even if the host parser is lenient. It rejects block
- * scalars, indented continuation lines, lists, duplicate keys and unknown syntax.
+ * This parser is deliberately independent of `adapters/dsh/skills-host.js`: the
+ * tests must hold the files to the contract even if the host parser is lenient.
+ * It accepts the folded (`>`) and literal (`|`) block scalars upstream uses, and
+ * rejects indented continuation lines, lists, duplicate keys and unknown syntax.
  *
  * @param {string} source whole SKILL.md text.
  * @param {string} label diagnostic label (usually the package-relative path).
@@ -214,8 +195,8 @@ export function parseFrontmatter(source, label = 'document') {
     if (line.trim() === '' || line.trimStart().startsWith('#')) continue
     if (/^[ \t]/.test(line)) {
       throw new Error(
-        `${label}:${lineNumber}: indented frontmatter line ${JSON.stringify(line)} is a block scalar or ` +
-          'multiline value, which DESIGN.md forbids (use single-line values only)',
+        `${label}:${lineNumber}: indented frontmatter line ${JSON.stringify(line)} is a multiline value, which the ` +
+          `frontmatter contract does not allow here (use a single-line value or a ">" / "|" block scalar)`,
       )
     }
     const pair = /^([A-Za-z0-9_-]+):(?:[ \t]*(.*))?$/.exec(line)

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon.svg?v=2" width="96" height="96" alt="dsh-egm 标识：大象的前半身与金鱼的尾巴，在分割处切开">
+  <img src="adapters/dsh/icon.svg?v=2" width="96" height="96" alt="dsh-egm 标识：大象的前半身与金鱼的尾巴，在分割处切开">
 </p>
 
 <h1 align="center">🐘 dsh-egm 🐟</h1>
@@ -87,7 +87,7 @@ dsh plugin --profile web add dsh-egm
 
 重启 Harness，然后在 **设置 → 插件** 中确认插件已被启用。
 
-本软件包声明了只读的 `egm-reviewer` 预设，但不会创建宿主的 agent-preset 服务。`egm_reviewer` 要求 profile 组合一个能解析出有效默认预设的 `agentPresets` 注册表，以及一个进程内的 `spawn` 子 Agent 提供者。Harness 的 `web` profile 会组合注册表与默认预设；裸 SDK profile 不会。缺失时 `egm_reviewer` 会明确报错（缺少注册表时报 `the agent-presets service is not composed`）。本版本尚未实现由软件包为真正缺失的注册表提供配置，因此裸 SDK profile 目前无法运行评审。
+本软件包声明了只读的 `egm-reviewer` 预设，但不会创建宿主的 agent-preset 服务。`egm_reviewer` 要求 profile 组合一个能解析出有效默认预设的 `agentPresets` 注册表，以及一个进程内的 `spawn` 子 Agent 提供者。Harness 的 `web` profile 会组合注册表与默认预设；裸 SDK profile 不会。缺失时 `egm_reviewer` 会明确报错（缺少注册表时报 `the agent-presets service is not composed`）；[宿主指南](docs/dsh.md#host-prerequisites-and-current-limit) 列出了具体的拒绝行为。本版本尚未实现由软件包为真正缺失的注册表提供配置，因此裸 SDK profile 目前无法运行评审。
 
 如果是本地开发，也可以直接从本地检出目录安装：
 
@@ -139,7 +139,7 @@ dsh plugin --profile web add /path/to/dsh-egm
 
 ## 工作原理
 
-![Elephant Goldfish 简化工作流](diagrams/workflow.svg)
+![Elephant Goldfish 简化工作流](docs/assets/workflow.svg)
 
 *大象记住上下文。金鱼从头开始。最后由你掌控。*
 
@@ -147,7 +147,7 @@ dsh plugin --profile web add /path/to/dsh-egm
 
 结构化的 `/egm-review` 包含五个阶段：**初始视角拉远（Initial Zoom Out）**、**理解力测试（Comprehension）**、**设计批评（Design Critique）**、**中间视角拉远（Intermediate Zoom Out）** 以及 **实现就绪度（Implementation Readiness）**。不同的评审者从不同角度审查设计，其发现将成为待你解决的事项，而不是由 Agent 代替你做出决策。
 
-了解包含可选引导（bootstrap）步骤的完整协议，请参阅[详细协议流程图](diagrams/protocol.svg)。
+了解包含可选引导（bootstrap）步骤的完整协议，请参阅[详细协议流程图](docs/assets/protocol.svg)。
 
 ### 本插件新增特性
 
@@ -160,7 +160,7 @@ Google 的上游项目提供了 EGM 的技能、评审者角色设定（personas
 
 **关于“只读”的含义与界限：** 它能防止金鱼评审者在受支持的 Harness 配置中使用写入、Shell 及其他被禁用的工具。但**这并不意味着评审者无法看到项目文件**：它们可以读取和搜索允许使用的工具所暴露的内容。请勿将评审者预设视为保密隔离边界，并请务必检查向其公开的项目内容。
 
-本集成的原生回放证据覆盖锁定的 DSH 0.2.1-rc.5 Linux 运行时，并不覆盖声明范围内的每个版本；其隔离行为取决于 Harness 对工具限制和子 Agent 派生 API 的具体实现。 [验证指南](VERIFICATION.md) 详细介绍了防护层、测试及其局限性。 [ADAPTATIONS.md](ADAPTATIONS.md) 解释了哪些内容源自 Google，哪些是本软件包新增的内容。
+本集成的原生回放证据覆盖锁定的 DSH 0.2.1-rc.5 Linux 运行时，并不覆盖声明范围内的每个版本；其隔离行为取决于 Harness 对工具限制和子 Agent 派生 API 的具体实现。 [宿主指南](docs/dsh.md) 详细介绍了防护层、派发规则及其局限性；[测试记录](TESTING.md) 列出了测试与当前结果。[ADAPTATIONS.md](ADAPTATIONS.md) 解释了哪些内容源自 Google，哪些是本软件包新增的内容。
 
 ## 包含的技能
 
@@ -222,17 +222,18 @@ EGM artifact directory: .dev/docs
 
 ## 供维护者与好奇者阅读
 
-- [VERIFICATION.md](VERIFICATION.md) — 评审者隔离、可复现测试、CI 和验证证据。
+- [docs/dsh.md](docs/dsh.md) — 宿主指南：安装/调用、清单变更、路径根、派发与阶段顺序、评审者隔离与拒绝行为。
+- [TESTING.md](TESTING.md) — 需求对照表、Harness 测试记录与当前局限。
 - [E2E-VERIFICATION.md](E2E-VERIFICATION.md) — 记录的设计工作流及其局限性。
-- [ADAPTATIONS.md](ADAPTATIONS.md) 与 [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — 上游来源与 Harness 专属机制说明。
+- [ADAPTATIONS.md](ADAPTATIONS.md) 与 [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — 上游来源与本指南汇总的 Harness 机制细节。
 - [CHANGELOG.md](CHANGELOG.md) — 版本变更历史。
-- [diagrams/](diagrams/README.md) — 工作流架构图及其源码。
+- [docs/assets/](docs/assets/README.md) — 工作流架构图、其 D2 源码与渲染脚本。
 
 如需在检出目录中运行软件包检查：
 
 ```bash
-node --test
-node scripts/check-upstream.mjs
+npm test
+node adapters/dsh/check_upstream.mjs
 ```
 
 上游漂移检查仅报告变化，绝不会修改或替换内置文件。
