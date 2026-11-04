@@ -30,7 +30,7 @@ const PARAMETERS = {
     },
     prompt: {
       type: 'string',
-      description: 'The complete reviewer prompt: the Goldfish persona text plus every input path the fresh child needs. The child sees none of this conversation.',
+      description: 'The complete reviewer prompt: the envelope, including `Persona: <absolute path>`, plus every input path the fresh child needs; the child reads them itself. The child sees none of this conversation.',
     },
   },
   required: ['description', 'prompt'],
@@ -79,7 +79,7 @@ export function apply(ctx) {
     description:
       'Start a fresh-context, read-only Goldfish reviewer for an Elephant-Goldfish Model design review. '
       + 'The child runs in the read-only `egm-reviewer` agent preset: it can read and search files but cannot write, edit, run commands, ask the user, read this conversation, or delegate. '
-      + 'Pass the reviewer persona text verbatim and every input path in `prompt`; the child sees none of this conversation. '
+      + 'Name the persona file and every input path in `prompt`; the child reads them itself and sees none of this conversation. '
       + 'Use this tool only for EGM reviewer activations and never use `subagent_fork` for a review.',
     parameters: PARAMETERS,
     output: {

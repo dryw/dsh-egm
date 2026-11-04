@@ -50,8 +50,8 @@ prose: [README.md](./README.md), [ADAPTATIONS.md](./ADAPTATIONS.md),
   tool and the `agent/created` reviewer-isolation hook ([reviewer-host.js:16-18](./reviewer-host.js),
   [reviewer-host.js:65-120](./reviewer-host.js)).
 - `egm_reviewer` tool (registered by `reviewer-host.js`) — inputs `{ description, prompt }` (both
-  required strings; the prompt must contain the persona text and every input path because the child
-  sees none of the calling conversation) and output `{ kind: 'activation', subagentId }`; a call
+  required strings; the prompt must name the `Persona:` file and every input path, which the child reads
+  itself, because it sees none of the calling conversation) and output `{ kind: 'activation', subagentId }`; a call
   starts one `spawn` child in the `egm-reviewer` preset with `maxDepth: 1`, and the tool description
   forbids `subagent_fork` for reviews ([reviewer-host.js:22-47](./reviewer-host.js),
   [reviewer-host.js:77-90](./reviewer-host.js), [reviewer-host.js:103-116](./reviewer-host.js)).

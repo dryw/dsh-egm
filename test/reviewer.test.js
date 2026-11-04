@@ -68,6 +68,9 @@ test('the reviewer plugin registers the egm_reviewer tool and starts preset chil
   const tool = registeredTools[0]
   assert.equal(tool.name, 'egm_reviewer')
   assert.match(tool.description, /read-only/iu)
+  assert.match(tool.description, /Name the persona file and every input path/u)
+  assert.match(tool.parameters.properties.prompt.description, /including `Persona: <absolute path>`/u)
+  assert.doesNotMatch(JSON.stringify(tool), /persona text/u)
   const result = await tool.execute(
     { description: 'comprehension reviewer', prompt: 'You are a naive reader.' },
     { agent: { id: 'parent-1' }, signal: new AbortController().signal },

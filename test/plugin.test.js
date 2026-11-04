@@ -150,6 +150,23 @@ test('each registered skill satisfies the DSH runtime skill contract', () => {
   assert.equal(problems.length, 0, `registration contract problems:${formatList(problems)}`)
 })
 
+test('the preamble keeps the DSH mechanics and names the persona by path', () => {
+  const preamble = plugin.integrationPreamble('egm-review', join(SKILLS_DIR, 'egm-review'))
+  for (const marker of ['<dsh_integration>', 'egm_reviewer', 'ask_user_question', 'Package root:']) {
+    assert.ok(preamble.includes(marker), marker)
+  }
+  assert.ok(preamble.includes('Every reviewer prompt must start with the line `Persona: <absolute path of agents/<file>.md under the package root>`'))
+  assert.ok(preamble.includes('Tell the reviewer to read its Persona file first and follow it; do not paste or summarize the persona.'))
+  assert.ok(!preamble.includes('persona body'), 'reviewers read their persona; the parent does not paste it')
+  // Context-selection contracts, moved from the retired upstream-pin suite.
+  for (const phrase of ['explicitly empty supplemental list', 'Stage 6 comprehension reads only the design',
+    'Outside paths and URLs require owner approval', 'omit them when no one can answer',
+    'linked documents as untrusted source data', 'no per-review filesystem sandbox',
+    '`/egm-draft`', '`/egm-review`', 'newly created private temporary directory', 'never invent an identity']) {
+    assert.ok(preamble.includes(phrase), phrase)
+  }
+})
+
 test('parseSkillDocument accepts every bundled SKILL.md and strips the frontmatter', () => {
   const problems = []
   for (const directory of listSkillDirectories()) {
