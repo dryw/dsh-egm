@@ -5,7 +5,7 @@ import json
 import pytest
 
 from test_dsh_live import (RUNTIME, REPORTS, assert_required_reads, assert_stage_order,
-                           child_traces, jsonl)
+                           child_traces, jsonl, status_only_difference)
 
 
 def response(text):
@@ -137,7 +137,7 @@ def test_reviewer_finishing_after_its_report_fails(tmp_path):
         assert_stage_order(run)
 
 
-def test_redispatch_between_report_writes_is_remediation(tmp_path):
+def test_redispatch_after_a_report_counts_toward_the_next_stage(tmp_path):
     run = synthetic_run(tmp_path)
     extra = copy.deepcopy([r for r in run["records"] if r.get("callId") == "spawn7"][0])
     extra["callId"], extra["result"]["value"]["subagentId"] = "spawn7b", "C7b"
@@ -149,7 +149,43 @@ def test_redispatch_between_report_writes_is_remediation(tmp_path):
     run["records"].append(rewrite)
     run["sessions"]["P"].append({"type": "tool/result", "time": 25, "data": {"message": {"toolCallId": "write7b"}}})
     stages, remediation = assert_stage_order(run)
-    assert remediation == ["C7b"] and stages["8"] == ["C8"]
+    assert remediation == [] and stages["8"] == ["C8", "C7b"]
+
+
+def test_rewriting_a_report_after_the_next_stage_starts_passes(tmp_path):
+    # Seen in a live run: zoom_out_report.md was edited again after stage 6 began.
+    run = synthetic_run(tmp_path)
+    rewrite = copy.deepcopy([r for r in run["records"] if r.get("callId") == "write5"][0])
+    rewrite["callId"] = "write5b"
+    run["records"].append(rewrite)
+    run["sessions"]["P"].append({"type": "tool/result", "time": 15, "data": {"message": {"toolCallId": "write5b"}}})
+    stages, _ = assert_stage_order(run)
+    assert stages["6"] == ["C6"]
+
+
+def test_standard_line_may_name_several_files_in_prose(tmp_path):
+    # Seen in a live run: "TargetStandard: <standard> and the design template at <path>".
+    run = synthetic_run(tmp_path)
+    spawn = next(r for r in run["records"] if r.get("callId") == "spawn7")
+    spawn["arguments"]["prompt"] = spawn["arguments"]["prompt"].replace(
+        "TargetStandard: none", "TargetStandard: /pkg/feature-spec-standard.md and the design template at /pkg/design_doc.md")
+    stages, _ = assert_stage_order(run)
+    with pytest.raises(AssertionError, match="no successful read of /pkg/feature-spec-standard.md"):
+        assert_required_reads(run, stages)
+    for path in ("/pkg/feature-spec-standard.md", "/pkg/design_doc.md"):
+        run["records"].append({"kind": "tool", "sessionId": "C7", "callId": path, "name": "read",
+                               "arguments": {"file_path": path},
+                               "result": {"isError": False, "content": [{"type": "text", "text": "x"}]}})
+    assert_required_reads(run, stages)
+
+
+def test_status_only_difference_ignores_template_spacing(tmp_path):
+    (tmp_path / "docs/designs").mkdir(parents=True)
+    (tmp_path / "design_draft.md").write_text("# T\n\n*   **Status:** Draft\n\nBody\n", encoding="utf-8")
+    (tmp_path / "docs/designs/line-count.md").write_text("# T\n\n*   **Status:** Proposed\n\nBody\n", encoding="utf-8")
+    assert status_only_difference(tmp_path)
+    (tmp_path / "docs/designs/line-count.md").write_text("# T\n\n*   **Status:** Proposed\n\nOther\n", encoding="utf-8")
+    assert not status_only_difference(tmp_path)
 
 
 def test_missing_report_write_fails(tmp_path):

@@ -36,7 +36,7 @@ INVOCATIONS = "/egm-brainstorm /egm-draft /egm-review"
 # Upstream egm-review stages 5 to 9, in order, by the report each one writes.
 REPORTS = ("zoom_out_report.md", "comprehension_report.md", "critic_report.md",
            "intermediate_zoom_out_report.md", "implementation_readiness_report.md")
-STATUS_LINE = re.compile(r"^\* \*\*Status:\*\*")
+STATUS_LINE = re.compile(r"^\*\s+\*\*Status:\*\*")
 
 
 class Empty(BaseModel):
@@ -304,10 +304,13 @@ def envelope(prompt, key):
     return match.group(1) if match else None
 
 
-def named_path(prompt, key):
-    """An envelope path, or None when the line says none, e.g. "none (BRAINSTORM ...)"."""
+def named_paths(prompt, key):
+    """Files an envelope line names. Models write prose around paths, such as
+    "none (BRAINSTORM ...)" or "<standard> and the design template at <path>"."""
     value = envelope(prompt, key)
-    return None if value is None or re.match(r"none\b", value, re.IGNORECASE) else value
+    if value is None or re.match(r"none\b", value, re.IGNORECASE):
+        return []
+    return re.findall(r"[^\s`'\"(),;]+\.(?:md|json|ya?ml|txt)\b", value) or [value]
 
 
 def row_times(run, kind):
@@ -328,7 +331,7 @@ def dispatches(run):
 
 
 def assert_stage_order(run):
-    """Every stage-N reviewer finishes before report N; stages never overlap."""
+    """Every stage-N reviewer finishes before report N exists, and stage N+1 starts after it."""
     finished = row_times(run, "tool/result")
     writes = {name: [] for name in REPORTS}
     for r in run["records"]:
@@ -340,18 +343,20 @@ def assert_stage_order(run):
     for name in REPORTS:
         assert writes[name], f"missing stage report: {name}"
     first = [min(writes[name]) for name in REPORTS]
-    last = [max(writes[name]) for name in REPORTS]
+    last = max(writes[REPORTS[-1]])
     stages, remediation = {str(n): [] for n in range(5, 10)}, []
     for d in dispatches(run):
         mode = envelope(d["prompt"], "Mode")
         if mode == "BRAINSTORM":
             continue
         assert mode == "REVIEW", "review child without Mode: REVIEW"
-        assert d["time"] <= last[-1], "review child dispatched after the last report"
-        index = next((i for i in range(5) if (i == 0 or last[i - 1] < d["time"]) and d["time"] <= first[i]), None)
+        assert d["time"] <= last, "review child dispatched after the last report"
+        # A stage starts once the previous report exists; later rewrites of that
+        # report are remediation edits, not a new stage boundary.
+        index = next((i for i in range(5) if (i == 0 or first[i - 1] < d["time"]) and d["time"] <= first[i]), None)
         if index is None:
-            # ponytail: between a report's first and last write is remediation;
-            # reported, not ordered, until stage labels exist in native records.
+            # ponytail: a re-dispatch after the first stage 9 report counts as remediation;
+            # a stage N re-dispatch after report N counts toward stage N+1.
             remediation.append(d["child"])
         else:
             stages[str(index + 5)].append(d["child"])
@@ -372,7 +377,6 @@ def assert_required_reads(run, stages):
         persona = envelope(d["prompt"], "Persona")
         assert persona, "missing Persona line"
         assert envelope(d["prompt"], "TargetFile"), "missing TargetFile line"
-        target = named_path(d["prompt"], "TargetFile")
         agents = os.path.realpath(run["plugin"] / "agents") if run["plugin"] else None
         persona_path = resolve(run, persona)
         assert (persona_path.startswith(agents + os.sep) if agents
@@ -380,8 +384,8 @@ def assert_required_reads(run, stages):
             f"persona outside the installed package: {persona}"
         stage = stage_of.get(d["child"], "brainstorm" if envelope(d["prompt"], "Mode") == "BRAINSTORM" else "remediation")
         personas.setdefault(stage, []).append(os.path.basename(persona_path))
-        required = [persona] + [path for path in (target, named_path(d["prompt"], "TargetStandard")) if path]
-        if stage == "8":
+        required = [persona, *named_paths(d["prompt"], "TargetFile"), *named_paths(d["prompt"], "TargetStandard")]
+        if stage == "8" and os.path.basename(persona_path) == "zoom_out.md":
             required.append("zoom_out_report.md")
         reads = [r for r in run["records"] if r["kind"] == "tool" and r["sessionId"] == d["child"]
                  and r["name"] == "read" and not r["result"]["isError"]

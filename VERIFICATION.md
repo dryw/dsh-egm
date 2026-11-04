@@ -84,5 +84,16 @@ separately.
   and 8 to 9 before any report, so the preamble now states upstream's sequencing
   rule. Upstream artifacts fail: the final design rewrote one relative link when
   copied to `docs/designs/` (no listed deviation). Failed acceptance attempt.
-- No paid run has used the sequencing rule yet. [Historical results](E2E-VERIFICATION.md)
+- Run with the sequencing rule, first attempt (2026-11-04, tarball from
+  `6fe3a21`): the parent ended its turn after brainstorm, so draft and review
+  never ran. Failed attempt.
+- Second attempt (2026-11-04, `deepseek-flash`, tarball SHA-256 `dcc0f511…`
+  from `6fe3a21`): reviewers (15), stage order, required reads and skill
+  delivery pass. Upstream artifacts fail only on `status-line-only`
+  (`Draft` to `Proposed`). By the rule above, Review is Pass (fixture) with that
+  Status note. Note: every stage reviewer targeted the final copy
+  `docs/designs/line-count.md` rather than `design_draft.md` as the prompt asks;
+  the parent applied each stage's fixes to both. Upstream's assertions do not
+  check the review target. Isolation was not rerun in this attempt (`-k brainstorm`);
+  it passed on the same tarball's earlier full run. [Historical results](E2E-VERIFICATION.md)
   do not establish acceptance of the current package.
