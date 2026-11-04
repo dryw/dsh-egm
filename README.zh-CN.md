@@ -203,7 +203,9 @@ EGM artifact directory: .dev/docs
 
 在其中一次评审中，金鱼捕获了一个重要的接口缺失：拟议的库存清理（inventory sweep）需要锁来覆盖一连串的操作，但设计说明书中从未指定清理程序获取该锁的安全方式。修改后的设计引入了一个加锁的快照上下文管理器（locked snapshot context manager），而不是直接伸进库存存储的私有锁中。参见[问题发现与解决方案](examples/e2e-verification/reviews/zoom_out_report.md)。
 
-详情请参阅 [E2E-VERIFICATION.md](E2E-VERIFICATION.md)。
+该次运行使用了合成的所有者答复、自动批准了部分草稿阶段，并将评审拆分到受支持的预设上执行；其最终实现就绪度复审在复审上限处返回 **NO-GO**，剩余的精确性问题已记录并在之后的设计中修复。它展示了设计工作流及其发现具体问题的能力，**并不**表示示例功能已经实现，也不表示最终设计通过了所有关卡。该示例是 `0.2.0` 的历史证据。
+
+有关运行环境、评审者激活、产物与让步（concessions），请参阅 [E2E-VERIFICATION.md](E2E-VERIFICATION.md)。示例文件仅存在于 GitHub 仓库中，不包含在 npm 包内。
 
 ## 反馈与支持
 
@@ -220,7 +222,7 @@ EGM artifact directory: .dev/docs
 ## 供维护者与好奇者阅读
 
 - [VERIFICATION.md](VERIFICATION.md) — 评审者隔离、可复现测试、CI 和验证证据。
-- [E2E-VERIFICATION.md](E2E-VERIFICATION.md) — 记录的设计工作流。
+- [E2E-VERIFICATION.md](E2E-VERIFICATION.md) — 记录的设计工作流及其局限性。
 - [ADAPTATIONS.md](ADAPTATIONS.md) 与 [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — 上游来源与 Harness 专属机制说明。
 - [CHANGELOG.md](CHANGELOG.md) — 版本变更历史。
 - [diagrams/](diagrams/README.md) — 工作流架构图及其源码。
@@ -232,7 +234,7 @@ node --test
 node scripts/check-upstream.mjs
 ```
 
-上游漂移检查仅进行变化报告。
+上游漂移检查仅报告变化，绝不会修改或替换内置文件。
 
 ## 许可证与署名
 

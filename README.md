@@ -110,7 +110,7 @@ The Elephant helps you explore requirements, alternatives, and trade-offs. The b
 ```
 
 The Elephant develops a specification section by section, asking for your decisions rather than silently filling in the blanks. By default, it saves the draft as DESIGN.md in a feature-named folder under docs/designs/ (for example, docs/designs/webhook-delivery/DESIGN.md).
-  
+
 **3. Send in the Goldfish.**
 
 ```text
@@ -189,7 +189,7 @@ Your artifact locations depend on the skill and project setup. To direct EGM's w
 EGM artifact directory: .dev/docs
 ```
 
-You can gitignore that working directory while keeping finalized design documents under version control. That makes decisions, reviews, and implementation plans inspectable long after the original chat has ended.
+You can add that working directory to `.gitignore` while keeping finalized design documents under version control. That makes decisions, reviews, and implementation plans inspectable long after the original chat has ended.
 
 ## Example run
 
@@ -199,7 +199,7 @@ The repository includes a [recorded end-to-end example](examples/e2e-verificatio
 
 In one review, a Goldfish caught an important missing interface: the proposed inventory sweep needed a lock to cover a sequence of operations, but the design never specified a safe way for the sweep to acquire that lock. The revised design introduced a locked snapshot context manager rather than reaching into the inventory store's private lock. See the [finding and resolution](examples/e2e-verification/reviews/zoom_out_report.md).
 
-The run also shows the limits of the evidence. It used synthetic owner answers, auto-approved some draft gates, and split the review across supported presets. Its final implementation-readiness re-audit returned **NO-GO** at the re-audit cap; the remaining precision issues were recorded and addressed in the design afterward. It demonstrates the plugin's design workflow and its ability to surface concrete problems, **not** that the fixture feature was implemented or that the resulting design passed every gate.
+The run also shows the limits of the evidence: it used synthetic owner answers, auto-approved some draft gates, and split the review across supported presets; its final implementation-readiness re-audit returned **NO-GO** at the re-audit cap, with the remaining precision issues recorded and addressed afterward. It demonstrates the design workflow and its ability to surface concrete problems, **not** that the fixture feature was implemented or that the resulting design passed every gate. The example is historical `0.2.0` evidence.
 
 See [E2E-VERIFICATION.md](E2E-VERIFICATION.md) for the environment, reviewer activations, artifacts, and concessions. The example files live in the GitHub repository; they aren't included in the npm package.
 
@@ -230,7 +230,7 @@ node --test
 node scripts/check-upstream.mjs
 ```
 
-The upstream drift check reports changes; it doesn't silently replace the vendored files.
+The upstream drift check reports changes; it never modifies or replaces the vendored files.
 
 ## License and attribution
 
