@@ -16,11 +16,15 @@
  *
  * Themes:
  * - Both sources declare `vars.d2-config` with `theme-id: 0`,
- *   `dark-theme-id: 200`, a transparent canvas and their own padding, so D2
- *   embeds both themes in the SVG (a `prefers-color-scheme: dark` block). Theme
- *   fills and text adapt to the reader's page while the explicit role accents
- *   (blue/orange/violet) stay fixed. Both are rendered with D2's defaults so
- *   that config applies.
+ *   `dark-theme-id: 200` and their own padding, so D2 embeds both themes in the
+ *   SVG (a `prefers-color-scheme: dark` block). Theme fills and text adapt to
+ *   the reader's page while the explicit role accents (blue/orange/violet) stay
+ *   fixed. Both are rendered with D2's defaults so that config applies.
+ *
+ * Background:
+ * - D2 renders a transparent canvas. This script paints an adaptive full-canvas
+ *   background (`#FFFFFF` light, `#1E1E2E` dark, matching D2's dark base) so a
+ *   standalone SVG page is readable in both color schemes, not just the README.
  *
  * Only Node >= 22 builtins are used.
  */
@@ -75,6 +79,33 @@ function escapeXml(value) {
     .replaceAll("'", '&apos;')
 }
 
+/** Canvas colors for the adaptive background; #1E1E2E is D2's dark-theme base. */
+const CANVAS_LIGHT = '#FFFFFF'
+const CANVAS_DARK = '#1E1E2E'
+
+/**
+ * Paint a full-canvas background behind D2's transparent drawing, so the SVG is
+ * readable when opened on its own page as well as embedded in the README.
+ */
+function addAdaptiveCanvas(svg) {
+  if (svg.includes('egm-canvas')) return svg
+  const openingTag = /<svg\b[^>]*>/u.exec(svg)
+  if (openingTag === null) throw new Error('rendered SVG has no <svg> element')
+  const viewBox = /viewBox="([0-9.\- ]+)"/u.exec(openingTag[0])
+  if (viewBox === null) throw new Error('rendered SVG has no viewBox')
+  const [minX, minY, width, height] = viewBox[1].trim().split(/[ ]+/u).map(Number)
+  if (![minX, minY, width, height].every(Number.isFinite)) {
+    throw new Error(`unreadable viewBox ${JSON.stringify(viewBox[1])}`)
+  }
+  const canvasStyle =
+    `<style>.egm-canvas{fill:${CANVAS_LIGHT}}` +
+    `@media (prefers-color-scheme:dark){.egm-canvas{fill:${CANVAS_DARK}}}</style>`
+  const canvasRect =
+    `<rect class="egm-canvas" x="${minX}" y="${minY}" ` +
+    `width="${width}" height="${height}" stroke-width="0" />`
+  return svg.replace('</title>', `</title>${canvasStyle}${canvasRect}`)
+}
+
 /** Add width/height, role, aria-label and a <title> to D2's outer SVG element. */
 function addAccessibilityMetadata(svg, { title, ariaLabel }) {
   const openingTag = /<svg\b[^>]*>/u.exec(svg)
@@ -106,7 +137,8 @@ for (const target of TARGETS) {
     continue
   }
   const original = readFileSync(target.output, 'utf8')
-  writeFileSync(target.output, addAccessibilityMetadata(original, target))
+  const accessible = addAccessibilityMetadata(original, target)
+  writeFileSync(target.output, addAdaptiveCanvas(accessible))
   const { length } = readFileSync(target.output)
   console.log(`rendered ${target.output} (${length} bytes)`)
 }

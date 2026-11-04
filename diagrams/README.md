@@ -25,16 +25,20 @@ The two SVG diagrams embedded in [README.md](../README.md) are authored in
 
 The render script passes the right flags per diagram, then adds the accessibility
 metadata D2 does not emit: `width`/`height`, `role="img"`, `aria-label` and a
-`<title>`.
+`<title>`. It also paints an adaptive light/dark background behind D2's
+transparent canvas, so an SVG opened on its own page is readable too.
 
 ## Theming
 
 - **Both diagrams are adaptive.** Each source declares `vars.d2-config` with
-  `theme-id: 0`, `dark-theme-id: 200`, a transparent canvas and its own padding
-  (`protocol.d2` also sets `pad: 55`), so D2 embeds both themes in the SVG behind
-  a `prefers-color-scheme: dark` block. Theme-generated fills and text adapt to
+  `theme-id: 0`, `dark-theme-id: 200` and its own padding (`protocol.d2` also sets
+  `pad: 55`), so D2 embeds both themes in the SVG behind a
+  `prefers-color-scheme: dark` block. Theme-generated fills and text adapt to
   the reader's page (`<img>` on a dark page renders the dark variant); the
   explicit blue/orange/violet role accents stay fixed.
+- **The canvas is adaptive too.** The render script paints a full-canvas
+  `#FFFFFF` / `#1E1E2E` background behind the drawing, so a standalone SVG page
+  is readable on its own rather than showing a transparent checkerboard.
 - Both are rendered with D2's defaults so that `d2-config` applies. The
   protocol sequence diagram is intentionally tall; it is embedded in the README's
   five-phase protocol section.
