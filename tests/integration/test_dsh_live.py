@@ -1,12 +1,18 @@
 """DSH equivalent of upstream test_codex.py: run, observe, assert.
 
 No custom guards, skill bridge, stage controller, approval records or reports.
-Only the two test functions opt into inference. Helpers also support native replay.
+Only the two test functions opt into inference. Helpers also support native replay
+and retained evidence: `python test_dsh_live.py check <evidence-dir>`.
 """
+import argparse
+from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
+import sys
 from unittest.mock import patch
 import uuid
 
@@ -26,6 +32,10 @@ SKILLS = ("egm-brainstorm", "egm-draft", "egm-review")
 # Native user gestures activate user-only skills. The upstream prompt stays in
 # its own unchanged text block; this is the entire DSH-specific input addition.
 INVOCATIONS = "/egm-brainstorm /egm-draft /egm-review"
+# Upstream egm-review stages 5 to 9, in order, by the report each one writes.
+REPORTS = ("zoom_out_report.md", "comprehension_report.md", "critic_report.md",
+           "intermediate_zoom_out_report.md", "implementation_readiness_report.md")
+STATUS_LINE = re.compile(r"^\* \*\*Status:\*\*")
 
 
 class Empty(BaseModel):
@@ -33,7 +43,16 @@ class Empty(BaseModel):
 
 
 def jsonl(path):
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()]
+    rows = []
+    # Split on LF only: splitlines() also splits U+2028 inside JSON strings.
+    for number, line in enumerate(Path(path).read_text(encoding="utf-8").split("\n"), 1):
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            raise AssertionError(f"malformed JSONL: {path}:{number}") from None
+    return rows
 
 
 def private_env(home):
@@ -49,6 +68,18 @@ def private_env(home):
     return env
 
 
+def install(root, tarball, profile):
+    """Install a tarball into a disposable DSH_HOME, as a user would."""
+    home = root / "home"
+    binary = RUNTIME / "node_modules/.bin/dsh"
+    assert binary.is_file(), "Install tests/integration/runtime dependencies first"
+    result = subprocess.run([str(binary), "plugin", "--profile", profile, "add", str(tarball)],
+                            cwd=root, env=private_env(home), capture_output=True, text=True, timeout=120)
+    (root / "install.log").write_text(result.stdout + result.stderr, encoding="utf-8")
+    assert result.returncode == 0, f"Installation failed: {root / 'install.log'}"
+    return home, home / "profiles" / profile / "node_modules/dsh-egm"
+
+
 @pytest.fixture(scope="module")
 def installed_plugin(tmp_path_factory):
     """Install once in a disposable profile, like upstream's plugin fixture."""
@@ -59,21 +90,60 @@ def installed_plugin(tmp_path_factory):
         packed = subprocess.run(["npm", "pack", "--json", "--pack-destination", str(root)], cwd=REPO,
                                 capture_output=True, text=True, timeout=60, check=True)
         tarball = root / json.loads(packed.stdout)[0]["filename"]
-    home = root / "home"
-    binary = RUNTIME / "node_modules/.bin/dsh"
-    assert binary.is_file(), "Install tests/integration/runtime dependencies first"
-    install = subprocess.run([str(binary), "plugin", "--profile", "sdk", "add", str(tarball)],
-                             cwd=root, env=private_env(home), capture_output=True, text=True, timeout=120)
-    (root / "install.log").write_text(install.stdout + install.stderr, encoding="utf-8")
-    assert install.returncode == 0, f"Installation failed: {root / 'install.log'}"
-    plugin = home / "profiles/sdk/node_modules/dsh-egm"
+    home, plugin = install(root, tarball, "sdk")
     assert all((plugin / "skills" / name / "SKILL.md").is_file() for name in SKILLS)
-    return home, plugin
+    return home, plugin, tarball
+
+
+def live_provider(model):
+    return [{"id": "live-provider",
+             "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-llm-deepseek-api-key/lib/index.js"),
+             "config": {"apiKeyEnv": "DEEPSEEK_API_KEY", "thinking": "disabled", "reasoningEffort": "off",
+                        "models": [{"id": model, "contextWindow": 1048576}],
+                        "retryPolicy": {"mode": "normal", "maxRetries": 0}}}]
+
+
+def profile_rows(root, provider_rows):
+    """Session logs, observer and provider rows shared by SDK and terminal runs."""
+    return [{"id": "llm-deepseek", "disabled": True},
+            {"id": "session-persistence-jsonl", "config": {"root": str(root / "sessions"), "compression": "none"}},
+            {"insert": [
+                {"id": "agent-preset-registry", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-agent-preset-registry/lib/index.js"), "config": {"default": "standard"}},
+                {"id": "preset-standard", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-agent-preset/lib/index.js"), "config": {"id": "standard", "plugins": []}},
+                {"id": "live-observer", "name": str(HERE / "observer.mjs")}, *provider_rows,
+            ]}]
+
+
+def write_json(path, value):
+    Path(path).write_text(json.dumps(value, indent=2), encoding="utf-8")
+
+
+def write_identity(root, plugin, tarball, model, surface):
+    """Record the candidate before any inference so a failed run keeps it."""
+    source = os.environ.get("DSH_EGM_SOURCE_SHA")
+    if TARBALL or surface == "tui":
+        assert source, "Set DSH_EGM_SOURCE_SHA to the commit the tarball was packed from"
+        dirty = None
+    else:
+        source = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True,
+                                text=True, check=True).stdout.strip()
+        dirty = bool(subprocess.run(["git", "status", "--porcelain"], cwd=REPO, capture_output=True,
+                                    text=True, check=True).stdout.strip())
+    package = json.loads((Path(plugin) / "package.json").read_text(encoding="utf-8"))
+    dsh = json.loads((RUNTIME / "node_modules/@deepseek-ai/dsh/package.json").read_text(encoding="utf-8"))
+    lock = json.loads((REPO / "upstream.lock.json").read_text(encoding="utf-8"))
+    write_json(root / "identity.json", {
+        "package_version": package["version"],
+        "tarball_sha256": hashlib.sha256(Path(tarball).read_bytes()).hexdigest(),
+        "source_sha": source, "dirty": dirty, "upstream_commit": lock["commit"],
+        "dsh_version": dsh["version"], "surface": surface, "model": model,
+        "date_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+    })
 
 
 def run_dsh(installed, root, content, provider="deepseek-official", model=None, provider_rows=None, workspace=None):
     """One SDK session. Record native evidence and always close the owned client."""
-    home, plugin = installed
+    home, plugin, tarball = installed
     workspace = workspace or root / "workspace"
     workspace.mkdir(exist_ok=True)
     model = model or MODEL
@@ -81,26 +151,18 @@ def run_dsh(installed, root, content, provider="deepseek-official", model=None, 
     if provider_rows is None:
         # Replay supplies its own provider; only live tests enter this branch.
         assert os.environ.get("DEEPSEEK_API_KEY"), "Set DEEPSEEK_API_KEY in this terminal"
-        provider_rows = [{"id": "live-provider",
-                          "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-llm-deepseek-api-key/lib/index.js"),
-                          "config": {"apiKeyEnv": "DEEPSEEK_API_KEY", "thinking": "disabled", "reasoningEffort": "off",
-                                     "models": [{"id": model, "contextWindow": 1048576}],
-                                     "retryPolicy": {"mode": "normal", "maxRetries": 0}}}]
-    rows = [{"id": "llm-deepseek", "disabled": True},
-            {"id": "session-persistence-jsonl", "config": {"root": str(root / "sessions"), "compression": "none"}},
-            {"insert": [
-                {"id": "agent-preset-registry", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-agent-preset-registry/lib/index.js"), "config": {"default": "standard"}},
-                {"id": "preset-standard", "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-agent-preset/lib/index.js"), "config": {"id": "standard", "plugins": []}},
-                {"id": "live-observer", "name": str(HERE / "observer.mjs")}, *provider_rows,
-            ]}]
+        write_identity(root, plugin, tarball, model, "sdk-headless")
+        provider_rows = live_provider(model)
     config_path = root / "profile.patch.json"
-    config_path.write_text(json.dumps(rows), encoding="utf-8")
+    write_json(config_path, profile_rows(root, provider_rows))
     env = private_env(home)
     env["EGM_TEST_RECORD"] = str(root / "records.jsonl")
     config = HarnessConfig(dsh_bin=str(RUNTIME / "node_modules/.bin/dsh"), dsh_home=str(home), cwd=str(workspace),
                            patches=(str(config_path),), env=env, initialize_timeout_seconds=30,
                            request_timeout_seconds=1200, shutdown_timeout_seconds=3)
     parent = "egm-test-" + uuid.uuid4().hex
+    write_json(root / "run.json", {"parent": parent, "workspace": str(workspace), "plugin": str(plugin),
+                                   "dsh_home": str(home)})
     notifications = []
     client = HarnessClient(config)
     def collect(n):
@@ -122,15 +184,10 @@ def run_dsh(installed, root, content, provider="deepseek-official", model=None, 
             client.close()
         finally:
             (root / "notifications.json").write_text(json.dumps(notifications), encoding="utf-8")
-    records = jsonl(root / "records.jsonl")
-    sessions = {}
-    for path in (root / "sessions").rglob("session.v4.jsonl"):
-        trace = jsonl(path)
-        assert trace[0]["id"] not in sessions, "Ambiguous native Session"
-        sessions[trace[0]["id"]] = trace
-    assert parent in sessions, "Missing native parent trace"
-    assert complete(sessions[parent]), "Parent failed; inspect native turn/end reason"
-    runtime = [row["pid"] for row in records if row["kind"] == "runtime"]
+    run = load_run(root)
+    assert parent in run["sessions"], "Missing native parent trace"
+    assert complete(run["sessions"][parent]), "Parent failed; inspect native turn/end reason"
+    runtime = [row["pid"] for row in run["records"] if row["kind"] == "runtime"]
     assert len(runtime) == 1
     try:
         os.kill(runtime[0], 0)
@@ -138,8 +195,28 @@ def run_dsh(installed, root, content, provider="deepseek-official", model=None, 
         pass
     else:
         raise AssertionError("Owned SDK runtime remains after close")
-    return {"parent": parent, "records": records, "notifications": notifications,
-            "sessions": sessions, "workspace": workspace, "plugin": plugin}
+    return run
+
+
+def load_run(root):
+    """Rebuild a run from an evidence directory; parsing only, no process checks."""
+    root = Path(root)
+    meta = json.loads((root / "run.json").read_text(encoding="utf-8")) if (root / "run.json").is_file() else {}
+    sessions = {}
+    for path in sorted((root / "sessions").rglob("session.v4.jsonl")):
+        trace = jsonl(path)
+        assert trace[0]["id"] not in sessions, "Ambiguous native Session"
+        sessions[trace[0]["id"]] = trace
+    parent = meta.get("parent") or next((key for key, trace in sessions.items()
+                                         if trace[0].get("delegationDepth") == 0), None)
+    plugin = meta.get("plugin")
+    records = root / "records.jsonl"
+    notifications = root / "notifications.json"
+    return {"root": root, "parent": parent, "sessions": sessions,
+            "records": jsonl(records) if records.is_file() else [],
+            "notifications": json.loads(notifications.read_text(encoding="utf-8")) if notifications.is_file() else [],
+            "workspace": Path(meta.get("workspace") or root / "workspace"),
+            "plugin": Path(plugin) if plugin and Path(plugin).is_dir() else None}
 
 
 def complete(trace):
@@ -148,7 +225,7 @@ def complete(trace):
 
 
 def child_traces(run):
-    """Join actual dispatches, SDK lifecycles and child logs, as upstream does."""
+    """Join actual dispatches, host lifecycles and child logs, as upstream does."""
     spawns = [r for r in run["records"] if r["kind"] == "tool" and r["name"] == "egm_reviewer"]
     assert spawns, "No native reviewer dispatch"
     children = set()
@@ -157,14 +234,20 @@ def child_traces(run):
         assert row["result"]["value"]["kind"] == "activation"
         children.add(row["result"]["value"]["subagentId"])
     # Count child Sessions, not parent claims or repeated activations.
-    for method in ("subagent.started", "subagent.finished"):
-        events = [n["payload"] for n in run["notifications"] if n["method"] == method]
-        assert {e["childSessionId"] for e in events} == children, "Missing/unattributed native lifecycle"
-        if method == "subagent.finished":
-            assert all(e["status"] == "ok" and e["stopReason"] == "completed" for e in events)
+    if run["notifications"]:
+        for method in ("subagent.started", "subagent.finished"):
+            events = [n["payload"] for n in run["notifications"] if n["method"] == method]
+            assert {e["childSessionId"] for e in events} == children, "Missing/unattributed native lifecycle"
+            if method == "subagent.finished":
+                assert all(e["status"] == "ok" and e["stopReason"] == "completed" for e in events)
+    else:
+        # A terminal UI run has no SDK notifications; use the parent's native catalog.
+        catalog = {r["data"]["childId"] for r in run["sessions"].get(run["parent"], [])
+                   if r.get("type") == "subagent/catalog"}
+        assert catalog == children, "Missing/unattributed native lifecycle"
     result = {}
     for child in children:
-        assert child != run["parent"] and child in run["sessions"]
+        assert child != run["parent"] and child in run["sessions"], "Missing native child trace"
         trace = run["sessions"][child]
         assert trace[0].get("isSeeded") is False and trace[0].get("delegationDepth") == 1
         assert complete(trace), "Child has no successful native completion"
@@ -186,6 +269,142 @@ def assert_skill_delivery(run):
         assert any(body in block.get("text", "") for m in messages for block in m.get("content", []))
         assert any(row.get("type") == "user/message" and row.get("data", {}).get("source", {}).get("kind") == "skill-invocation"
                    and row["data"]["source"].get("name") == name for row in run["sessions"][run["parent"]]), "Missing native user skill invocation"
+
+
+def resolve(run, path):
+    return os.path.realpath(os.path.join(run["workspace"], path))
+
+
+def envelope(prompt, key):
+    match = re.search(rf"^{key}:[ \t]*(.+?)[ \t]*$", prompt, re.MULTILINE)
+    return match.group(1) if match else None
+
+
+def row_times(run, kind):
+    """Native tool/call or tool/result times by call id, from the parent log."""
+    rows = [r for r in run["sessions"].get(run["parent"], []) if r.get("type") == kind]
+    if kind == "tool/call":
+        return {r["data"]["callId"]: r["time"] for r in rows}
+    return {r["data"]["message"]["toolCallId"]: r["time"] for r in rows}
+
+
+def dispatches(run):
+    """Reviewer dispatches with their child id, prompt and native call time."""
+    called = row_times(run, "tool/call")
+    return [{"child": r["result"]["value"]["subagentId"], "prompt": r["arguments"]["prompt"],
+             "time": called[r["callId"]]}
+            for r in run["records"] if r["kind"] == "tool" and r["name"] == "egm_reviewer"
+            and r["sessionId"] == run["parent"] and not r["result"]["isError"]]
+
+
+def assert_stage_order(run):
+    """Every stage-N reviewer finishes before report N; stages never overlap."""
+    finished = row_times(run, "tool/result")
+    writes = {name: [] for name in REPORTS}
+    for r in run["records"]:
+        if r["kind"] == "tool" and r["sessionId"] == run["parent"] and r["name"] in ("write", "edit") \
+                and not r["result"]["isError"] and r["callId"] in finished:
+            for name in REPORTS:
+                if resolve(run, r["arguments"]["file_path"]) == resolve(run, name):
+                    writes[name].append(finished[r["callId"]])
+    for name in REPORTS:
+        assert writes[name], f"missing stage report: {name}"
+    first = [min(writes[name]) for name in REPORTS]
+    last = [max(writes[name]) for name in REPORTS]
+    stages, remediation = {str(n): [] for n in range(5, 10)}, []
+    for d in dispatches(run):
+        mode = envelope(d["prompt"], "Mode")
+        if mode == "BRAINSTORM":
+            continue
+        assert mode == "REVIEW", "review child without Mode: REVIEW"
+        assert d["time"] <= last[-1], "review child dispatched after the last report"
+        index = next((i for i in range(5) if (i == 0 or last[i - 1] < d["time"]) and d["time"] <= first[i]), None)
+        if index is None:
+            # ponytail: between a report's first and last write is remediation;
+            # reported, not ordered, until stage labels exist in native records.
+            remediation.append(d["child"])
+        else:
+            stages[str(index + 5)].append(d["child"])
+    for index, stage in enumerate(stages):
+        assert stages[stage], f"stage {stage} has no reviewer"
+        for child in stages[stage]:
+            ends = [r["time"] for r in run["sessions"][child] if r.get("type") == "turn/end"]
+            assert ends and max(ends) <= first[index], f"stage {stage} reviewer finished after its report"
+    return stages, remediation
+
+
+def assert_required_reads(run, stages):
+    """Each reviewer reads its persona, target and standard (TESTING.md read rule)."""
+    stage_of = {child: stage for stage, children in stages.items() for child in children}
+    personas = {}
+    for d in dispatches(run):
+        persona, target = envelope(d["prompt"], "Persona"), envelope(d["prompt"], "TargetFile")
+        assert persona, "missing Persona line"
+        assert target, "missing TargetFile line"
+        agents = os.path.realpath(run["plugin"] / "agents") if run["plugin"] else None
+        persona_path = resolve(run, persona)
+        assert (persona_path.startswith(agents + os.sep) if agents
+                else f"{os.sep}node_modules{os.sep}dsh-egm{os.sep}agents{os.sep}" in persona_path), \
+            f"persona outside the installed package: {persona}"
+        stage = stage_of.get(d["child"], "brainstorm" if envelope(d["prompt"], "Mode") == "BRAINSTORM" else "remediation")
+        personas.setdefault(stage, []).append(os.path.basename(persona_path))
+        required = [persona, target]
+        standard = envelope(d["prompt"], "TargetStandard")
+        if standard and standard.lower() != "none":
+            required.append(standard)
+        if stage == "8":
+            required.append("zoom_out_report.md")
+        reads = [r for r in run["records"] if r["kind"] == "tool" and r["sessionId"] == d["child"]
+                 and r["name"] == "read" and not r["result"]["isError"]
+                 and "".join(b.get("text", "") for b in r["result"].get("content", [])).strip()]
+        read_paths = {resolve(run, r["arguments"]["file_path"]) for r in reads}
+        for path in required:
+            assert resolve(run, path) in read_paths, f"no successful read of {path}"
+    return {stage: sorted(names) for stage, names in personas.items()}
+
+
+def status_only_difference(workspace):
+    draft, final = (Path(workspace) / "design_draft.md", Path(workspace) / "docs/designs/line-count.md")
+    if not (draft.is_file() and final.is_file()) or draft.read_bytes() == final.read_bytes():
+        return False
+    strip = lambda path: [l for l in path.read_text(encoding="utf-8").split("\n") if not STATUS_LINE.match(l)]
+    return strip(draft) == strip(final)
+
+
+def run_checks(run, out=None):
+    """Run every check, record each result, and write checks.json; never stop early."""
+    results, extra = {}, {"stages": {}, "remediation": [], "personas": {}}
+
+    def check(key, function):
+        try:
+            value = function()
+        except AssertionError as error:
+            results[key] = f"{key}: {error}" if str(error) else f"{key}: AssertionError"
+            return None
+        except Exception as error:  # A broken record is a failed check, not a crash.
+            results[key] = f"{key}: {type(error).__name__}: {error}"
+            return None
+        results[key] = "unverifiable" if value == "unverifiable" else "pass"
+        return value
+
+    check("reviewers", lambda: assert_upstream_child_count(child_traces(run)))
+    order = check("stage_order", lambda: assert_stage_order(run))
+    if order:
+        extra["stages"], extra["remediation"] = order
+    personas = check("required_reads", lambda: assert_required_reads(run, extra["stages"]))
+    if personas:
+        extra["personas"] = personas
+    check("skill_delivery", lambda: "unverifiable" if run["plugin"] is None else assert_skill_delivery(run))
+    check("upstream_artifacts", lambda: assert_upstream_artifacts(run["workspace"]))
+    summary = {"checks": results,
+               "deviations": ["status-line-only"] if status_only_difference(run["workspace"]) else [],
+               "remediation": extra["remediation"], "personas": extra["personas"]}
+    write_json(out or Path(run["root"]) / "checks.json", summary)
+    return summary
+
+
+def failures(summary):
+    return [value for value in summary["checks"].values() if value not in ("pass", "unverifiable")]
 
 
 @LIVE
@@ -211,6 +430,45 @@ def test_fresh_context_isolation(installed_plugin, tmp_path):
 def test_brainstorm_draft_review(installed_plugin, tmp_path):
     prompt = (HERE / "fixtures/live-prompts/google-codex-line-count-v1.txt").read_bytes().decode("utf-8")
     run = run_dsh(installed_plugin, tmp_path, [{"type": "text", "text": INVOCATIONS}, {"type": "text", "text": prompt}])
-    assert_skill_delivery(run)
-    assert_upstream_artifacts(run["workspace"])
-    assert_upstream_child_count(child_traces(run))
+    summary = run_checks(run)
+    assert not failures(summary), f"{failures(summary)}; see {tmp_path / 'checks.json'}"
+
+
+def profile(directory, tarball, source, model):
+    """Prepare a terminal UI run with the same logs, observer and identity record."""
+    directory = Path(directory).resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "workspace").mkdir(exist_ok=True)
+    os.environ["DSH_EGM_SOURCE_SHA"] = source
+    home, plugin = install(directory, Path(tarball).resolve(strict=True), "tui")
+    patch_path = directory / "profile.patch.json"
+    write_json(patch_path, profile_rows(directory, live_provider(model)))
+    write_json(directory / "run.json", {"parent": None, "workspace": str(directory / "workspace"),
+                                        "plugin": str(plugin), "dsh_home": str(home)})
+    write_identity(directory, plugin, tarball, model, "tui")
+    print(f"cd {directory / 'workspace'} && EGM_TEST_RECORD={directory / 'records.jsonl'} DSH_HOME={home} "
+          f"{RUNTIME / 'node_modules/.bin/dsh'} tui --patch {patch_path}")
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(description="Check retained evidence or prepare a terminal UI run.")
+    commands = parser.add_subparsers(dest="command", required=True)
+    check = commands.add_parser("check")
+    check.add_argument("evidence", type=Path)
+    check.add_argument("--out", type=Path, help="write checks.json here; use it for retained evidence")
+    prep = commands.add_parser("profile")
+    prep.add_argument("directory", type=Path)
+    prep.add_argument("--tarball", required=True)
+    prep.add_argument("--source-sha", required=True)
+    prep.add_argument("--model", required=True)
+    args = parser.parse_args(argv)
+    if args.command == "profile":
+        profile(args.directory, args.tarball, args.source_sha, args.model)
+        return 0
+    summary = run_checks(load_run(args.evidence), args.out)
+    print(json.dumps(summary, indent=2))
+    return 1 if failures(summary) else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
