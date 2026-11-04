@@ -108,5 +108,15 @@ separately.
   the stage 5 reviewer was running. The adapter now refuses follow-up messages
   to reviewers (proven in keyless replay), the preamble forbids editing the
   document during a stage, and the checks fail both cases, so this run no longer
-  counts. A new paid run and the manual interactive run are pending. [Historical results](E2E-VERIFICATION.md)
+  counts.
+- **Full suite on `1d208c2`** (2026-11-04, `deepseek-flash`, `reasoningEffort:
+  high`, tarball SHA-256 `c350453c…`): install, both isolation tests, reviewers
+  (15, each one turn, no follow-up messages), stage order with no edits during a
+  stage, required reads, skill delivery and upstream's unchanged assertions pass;
+  the final design is byte-identical to the reviewed draft. The run first failed
+  `required_reads` because brainstorm prompts had no `TargetFile` line, which
+  ADAPTER-NOTES.md lists as REVIEW-only; the check and the preamble wording now
+  agree (`a77194d`), and rechecking the retained evidence passes every check.
+  The preamble changed after this candidate, so a final run on the release
+  candidate and the manual interactive run are pending. [Historical results](E2E-VERIFICATION.md)
   do not establish acceptance of the current package.
