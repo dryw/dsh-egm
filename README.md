@@ -2,7 +2,7 @@
   <img src="icon.svg?v=2" width="96" height="96" alt="dsh-egm mark: the elephant's front half and the goldfish's tail cut at the split">
 </p>
 
-<h1 align="center">dsh-egm</h1>
+<h1 align="center">🐘 dsh-egm 🐟</h1>
 
 <p align="center">English &ensp;·&ensp; <a href="README.zh-CN.md">简体中文</a></p>
 
@@ -11,12 +11,11 @@
 <p align="center">
   <a href="#install">Install</a> &ensp;·&ensp;
   <a href="#quickstart">Quickstart</a> &ensp;·&ensp;
-  <a href="#feedback-and-support">Feedback</a> &ensp;·&ensp;
   <a href="#how-it-works">How it works</a> &ensp;·&ensp;
-  <a href="#see-a-complete-run">Example run</a> &ensp;·&ensp;
-  <a href="VERIFICATION.md">Verification</a> &ensp;·&ensp;
-  <a href="CHANGELOG.md">Changelog</a> &ensp;·&ensp;
-  <a href="#license-and-attribution">License</a>
+  <a href="#what-this-plugin-adds">The plugin</a> &ensp;·&ensp;
+  <a href="#included-skills">Skills</a> &ensp;·&ensp;
+  <a href="#example-run">Example run</a> &ensp;·&ensp;
+  <a href="#feedback-and-support">Feedback</a>
 </p>
 
 <p align="center">
@@ -25,284 +24,218 @@
   <a href="https://dsh-plugin.org/plugins/dryw/dsh-egm"><img alt="Listed on dsh-plugin.org" src="https://dsh-plugin.org/badges/listed.svg"></a>
   <a href="https://www.npmjs.com/package/dsh-egm"><img alt="npm: dsh-egm" src="https://img.shields.io/npm/v/dsh-egm"></a>
   <img alt="DeepSeek Harness 0.2.x" src="https://img.shields.io/badge/DSH-0.2.x-4c1.svg">
-  <img alt="node --test" src="https://img.shields.io/badge/gate-node%20--test-brightgreen.svg">
 </p>
 
-<p align="center">
-  <sub>An independent community port of Google's Elephant-Goldfish Model. Not affiliated with or
-  endorsed by Google.</sub>
-</p>
+<p align="center"><sub>Google's Elephant-Goldfish Model, adapted for DeepSeek Harness.</sub></p>
 
-`dsh-egm` brings the [Elephant-Goldfish Model](https://github.com/google/elephant-goldfish-model)
-(EGM) to [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) as a native plugin.
-A context-rich **Elephant** session interviews you and drafts a design document; fresh-context,
-**read-only Goldfish** reviewers then attack it for ambiguity, hidden assumptions, and
-implementation gaps; **you** make the trade-offs and approve the specification before any code
-is written.
+## Meet the Elephant 🐘
 
-Use it when a change needs design decisions first. For a small, clear bug fix, use your normal
-coding workflow.
+The Elephant is your long-running design partner.
+
+It explores your project, reads the relevant code, asks questions, and helps you work through alternatives. It keeps track of the decisions you've made and the reasons behind them. Together, you develop a design document.
+
+But the Elephant has a problem. **It remembers too much.**
+
+After hours of discussion, it understands what you meant, even when you haven't written it down. Ask the Elephant whether the design makes sense, and it might unconsciously fill in the gaps from your earlier conversation.
+
+That's dangerous, because whoever implements the design next won't necessarily have that context.
+
+We need someone who doesn't remember.
+
+## Meet the Goldfish 🐟
+
+The Goldfish starts fresh.
+
+It hasn't participated in your design discussions. It doesn't know why you chose a particular architecture or which requirements you explained but forgot to write down. It receives a self-contained review prompt, the design, and the reference material it needs. It can read and search permitted project files, **but it doesn't inherit the Elephant's conversation**.
+
+Then it tries to understand what you've written.
+
+Can it figure out how the system is supposed to work? Are the requirements unambiguous? Are failure cases accounted for? Do the interfaces fit together? And, most importantly, **could someone build this correctly without having been part of the original conversation?**
+
+When the Goldfish discovers a problem, the Elephant helps you address it. You revise the document, review it again, and decide when it's ready.
+
+The result isn't just a specification. It's project knowledge that can survive the conversation that created it.
+
+### Why bother?
+
+AI coding assistants have three recurring failure modes:
+
+1. **Forget.** Important decisions disappear when a conversation is compacted or restarted.
+2. **Assume.** An assistant confidently implements requirements nobody actually agreed on.
+3. **Agree.** An assistant reviewing its own design can quietly carry the same unwritten assumptions into the review.
+
+The [Elephant-Goldfish Model](https://github.com/google/elephant-goldfish-model) (EGM) separates the context-rich design conversation from independent, fresh-context criticism. **`dsh-egm` brings that workflow to [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) as a native plugin.**
+
+It's useful when a feature, migration, or architectural change needs decisions before code. For a small, well-understood bug fix, your normal coding workflow is probably enough.
+
+## Install
+
+You'll need:
+
+- **DeepSeek Harness 0.2.x**, compatible with the package's declared range `>=0.2.1-rc.5 <0.3.0`.
+- **Node.js 22 or 24** (`>=22 <25`; CI tests Node 22 and 24). If you're using the DSH 0.2.2 alpha line, its own requirement is Node 24.9 or newer.
+
+Install the plugin into your Harness profile. The example uses `web`; substitute the profile you actually use.
+
+```bash
+dsh plugin --profile web add dsh-egm
+```
+
+Restart Harness, then check **Settings → Plugins** to confirm it's enabled.
+
+For local development, you can install from a checkout instead:
+
+```bash
+dsh plugin --profile web add /path/to/dsh-egm
+```
+
+## Quickstart
+
+Copy each slash command below into the **Harness chat**.
+
+Imagine you're adding webhook delivery to an application. Before writing code, you need answers to questions like: What happens if delivery fails? What if the same event arrives twice?
+
+**1. Explore the idea.**
+
+```text
+/egm-brainstorm Add webhook delivery to this application.
+```
+
+The Elephant helps you explore requirements, alternatives, and trade-offs. The brainstorming workflow can bring in fresh reviewers to challenge the proposal. You and the Elephant settle on a direction and record it in a concept brief.
+
+**2. Draft the design.**
+
+```text
+/egm-draft
+```
+
+The Elephant develops a specification section by section, asking for your decisions rather than silently filling in the blanks. By default, it saves the draft as DESIGN.md in a feature-named folder under docs/designs/ (for example, docs/designs/webhook-delivery/DESIGN.md).
+
+**3. Send in the Goldfish.**
+
+```text
+/egm-review docs/designs/webhook-delivery/DESIGN.md
+```
+
+Fresh-context, read-only reviewers examine the design for ambiguities, missing contracts, failure cases, and implementation risks.
+
+**4. Resolve the findings.**
+
+```text
+/egm-resolve
+```
+
+Decide which criticisms matter, revise the design, and request another review if needed. You decide when the specification is good enough.
+
+**Then you write the code.** Or, more likely, you let your AI coding assistant write it—this time with a clearer specification of what it's supposed to build.
+
+You can also invoke the skills individually; the full sequence isn't mandatory.
 
 ## How it works
 
 ![Elephant Goldfish simplified workflow](diagrams/workflow.svg)
 
-*The Elephant remembers. The Goldfish starts fresh.
-You stay in control.*
+*The Elephant remembers. The Goldfish starts fresh. You stay in control.*
 
-| Role | Context | Responsibility |
-|---|---|---|
-| **Elephant** | Your project, requirements, and earlier decisions | Explore the problem, debate trade-offs, and draft the specification. |
-| **Goldfish** | The document and its referenced source material, without the earlier conversation | Find missing assumptions, unclear requirements, and implementation risks. |
-| **You** | The goals and constraints that matter | Resolve trade-offs, approve the design, and decide what to build. |
+The Elephant carries the project conversation forward. The Goldfish reviewers approach the written specification without that conversational history. The human decides what to accept, reject, or investigate.
 
-The upstream skills, personas and standards are shipped **verbatim** from the pinned upstream
-commit (see [ADAPTATIONS.md](ADAPTATIONS.md)); DeepSeek Harness mechanics live in a small
-integration layer that the host plugin prepends to each skill when it registers it. Reviewers are
-started with the plugin's `egm_reviewer` tool, which runs them in the bundled read-only
-`egm-reviewer` agent preset: they can read and search files, and have no write, edit, command,
-user-question, session-read, or delegation tool. A plain `subagent` inherits the parent's tool
-belt, so it is never used for a review, and a review in the same context is not a Goldfish
-review. Isolation is enforced by the host, not by persona text; the mechanism, its tests and the
-commands that reproduce them are in [VERIFICATION.md](VERIFICATION.md).
+A structured `/egm-review` uses five stages: **Initial Zoom Out**, **Comprehension**, **Design Critique**, **Intermediate Zoom Out**, and **Implementation Readiness**. Different reviewers look at the design from different angles, and their findings become things you can resolve, not decisions the agents make on your behalf.
 
-## Requirements
+For the fuller protocol, including the optional bootstrap step, see the [detailed protocol diagram](diagrams/protocol.svg).
 
-- DeepSeek Harness `0.2.1-rc.5` or newer in the `0.2.x` line (`engines.dsh`); the recorded
-  end-to-end run used `0.2.1-rc.5`. DSH evaluates that range with SemVer prerelease matching on.
-- Node.js 22 or 24 (CI-tested; `engines.node` is `>=22 <25`). The DSH `0.2.2` alpha line declares
-  its own `node >=24.9` requirement, so use Node 24.9+ when you run that harness line.
-- Linux, macOS, or Windows. CI runs the test suite on Ubuntu with Node 22 and 24, and on Windows
-  with Node 24.
-- A Harness composition with the skill registry, the tools registry, the subagent service, the
-  agent-presets service, and an in-process `spawn` subagent provider. The plugin installs the
-  `egm-reviewer` preset and the `egm_reviewer` tool that selects it.
+### What this plugin adds
 
-## Install
+Google's upstream project supplies the EGM skills, reviewer personas, and design standards. This package supplies the DeepSeek Harness integration needed to run that workflow:
 
-Install into your profile — the examples use `web`; replace it with the profile you use:
+- **Seven native skills.** Invoke `/egm-brainstorm`, `/egm-draft`, `/egm-review`, and the other EGM commands directly in Harness.
+- **Fresh reviewer sessions.** The `egm_reviewer` tool starts a new child using the `egm-reviewer` preset and a self-contained prompt. It does not fork or inherit the Elephant's session transcript.
+- **Host-enforced, read-only review.** The reviewer preset has file-reading and search tools, not file-writing, command-execution, session-reading, user-question, or delegation tools. The plugin also restricts tool visibility and guards calls against its reviewer allowlist. This is enforced through the Harness tool system, not merely by asking the model to behave.
+- **Traceable upstream content.** The EGM skills, personas, and standards are shipped unchanged from a pinned upstream commit. Harness-specific instructions are injected when the skills register, rather than edited into those upstream files.
 
-```sh
-# from npm: shortest install, and the form the DSH Plugin Hub lists
-dsh plugin --profile web add dsh-egm
+**What “read-only” does and doesn't mean:** it prevents Goldfish reviewers from using write, shell, and other disallowed tools in the supported Harness configuration. It doesn't mean reviewers are unable to see project files: they can read and search material available to their permitted tools. Don't treat the reviewer preset as a confidentiality boundary, and check what project material you expose to it.
 
-# from GitHub (before npm, or to pin a revision)
-dsh plugin --profile web add github:dryw/dsh-egm#<sha>
+The integration is tested against the declared DSH version range; its isolation behavior depends on the Harness implementation of the tool restrictions and child-agent spawning APIs. The [verification guide](VERIFICATION.md) describes the enforcement layers, tests, and their limits. [ADAPTATIONS.md](ADAPTATIONS.md) explains what comes from Google and what this package adds.
 
-# from a local checkout
-dsh plugin --profile web add /path/to/dsh-egm
-
-# from a packed tarball
-pnpm pack
-dsh plugin --profile web add ./dsh-egm-0.2.3.tgz
-```
-
-Restart the Harness after the first install, then check the plugin entry and its icon under
-**Settings → Plugins**.
-
-## Quickstart
-
-Pick a feature that needs design decisions, for example webhook delivery: what should happen when
-a delivery fails, or the same event arrives twice?
-
-1. **Explore the idea** — type `/egm-brainstorm Add webhook delivery to this project.` and
-   discuss requirements and trade-offs. Fresh reviewers challenge the proposal, and the agreed
-   direction is saved as `concepts_brief.md`.
-2. **Draft the specification** — `/egm-draft` turns the brief into a section-by-section design
-   document under `docs/designs/`, pausing after each section for your feedback in chat.
-3. **Review the draft** — `/egm-review docs/designs/webhook-delivery/DESIGN.md` runs the five
-   Goldfish review stages, then a synthesis pass. Choose which findings to address with
-   `/egm-resolve`.
-4. **Human review, then implement** — send the design for human review, then tell the agent to
-   build to the approved plan.
-
-You can use each skill on its own; you do not have to follow the full sequence.
-
-## Feedback and support
-
-Trying dsh-egm for the first time? Your experience is useful whether it worked or not.
-GitHub Issues is the place to ask for help and suggest improvements:
-
-- **Something broke or installation was confusing?** [Report a bug](https://github.com/dryw/dsh-egm/issues/new?template=bug_report.yml). Include the command or skill you ran, what happened, and your DSH/Node versions if known.
-- **Have an idea or documentation suggestion?** [Request an improvement](https://github.com/dryw/dsh-egm/issues/new?template=feature_request.yml).
-- **Want to share a first-run experience or ask a question?** [Open an issue](https://github.com/dryw/dsh-egm/issues/new/choose). A short note about what worked and what surprised you is welcome.
-
-Especially helpful: did the plugin install cleanly, did a fresh Goldfish reviewer start, and did the feedback change your design?
-
-**Before posting:** remove API keys, credentials, personal information, confidential project content, and sensitive log output. A small redacted reproduction is better than a full private design or session transcript.
-
-## See a complete run
-
-[`examples/e2e-verification/`](https://github.com/dryw/dsh-egm/tree/main/examples/e2e-verification)
-in the repository is a recorded run against a small fixture project: the concept brief from
-`/egm-brainstorm`, the design from `/egm-draft`, and all five Goldfish stage reports from
-`/egm-review`, with the harness environment and reviewer activation IDs in
-[E2E-VERIFICATION.md](https://github.com/dryw/dsh-egm/blob/main/E2E-VERIFICATION.md). It is
-repository-only and is not part of the npm tarball.
-
-One Stage 5 finding from that run, and the resolution it produced in the design:
-
-> **Major — lock interface missing (design §Technical Plan, §Detailed Implementation Plan).** The
-> sweep needs `Inventory`'s private lock to span snapshot → claim → emit, but no interface is
-> designed for cross-module lock access. The inventory should expose a locked snapshot or a context
-> manager that the sweep uses, instead of reaching into the store's lock.
->
-> **Resolution recorded in the revised design:** a locked snapshot context manager on `Inventory`;
-> contracts stated in terms of guarantees and injected ports; the SQLite ledger named as the
-> authority with the JSONL sink explicitly best-effort.
->
-> — [`examples/e2e-verification/reviews/zoom_out_report.md`](https://github.com/dryw/dsh-egm/blob/main/examples/e2e-verification/reviews/zoom_out_report.md)
-
-## The five-phase protocol
-
-The diagram below is the full five-phase run, including the optional bootstrap step.
-
-![Detailed five-phase Elephant-Goldfish protocol](diagrams/protocol.svg)
-
-Brainstorming runs six reviewers in parallel, one per lens; the design review runs five stages in
-sequence.
-
-### Phases
-
-- **Optional — bootstrap an existing project (`/egm-bootstrap`).** When an existing codebase lacks
-  documentation, the Elephant maps it, generates README/`EGM.md` context, and asks you to
-  verify the generated contracts.
-- **Phase 1 — Explore the idea (`/egm-brainstorm`).** The Elephant explores the architecture and
-  challenges your assumptions. You set the goals and constraints. The Elephant then spawns
-  **six independent, fresh-context reviewers**, one per brainstorming lens: Contrarian / YAGNI,
-  Cost / Quota / Token Economics, UX / Developer Ergonomics, Migration / Compatibility,
-  Observability / SRE, and Tech Debt / Maintenance. The synthesized critique is saved as
-  `concepts_brief.md`.
-- **Phase 2 — Write the specification (`/egm-draft`).** The Elephant turns the brief into
-  `design_draft.md` and iterates section by section while you review and decide.
-- **Phase 3 — Challenge the design (`/egm-review`).** Fresh reviewers with no parent conversation
-  history read the design, the relevant standards and the explicitly scoped source, then run five
-  sequential stages: Initial Zoom Out, Comprehension, Design Critique, Intermediate Zoom Out, and
-  Implementation Readiness. The reports are saved and the findings presented to you.
-- **Phase 4 — Resolve and approve (`/egm-resolve`).** You triage the findings and the approved
-  revisions are applied. This iterates until the design is accepted, with an optional independent
-  re-review. You then approve the final specification. No code is written in Phases 1-4.
-- **Phase 5 — Build and verify.** Implementation follows the approved design; the Elephant
-  implements, tests and presents the results, and you verify them against the specification.
-
-### Artifacts
-
-| Artifact | Produced in | Purpose |
-|---|---|---|
-| `concepts_brief.md` | Phase 1 | Agreed problem statement, alternatives, and decisions carried into drafting. |
-| `design_draft.md` | Phase 2 | Working specification, section by section. |
-| The design document under `docs/designs/` | end of Phase 2/4 | The approved specification implementation is built against. |
-| Stage review reports | Phase 3/4 | The Goldfish findings per stage. |
-| `goldfish_review_report.md` | Phase 4 | Findings categorized as contested, escalated, proposed-fix, or declined while resolving. |
-
-## Skills
+## Included skills
 
 | Skill | Invoke | Use it to… |
 |---|---|---|
-| Brainstorm | `/egm-brainstorm` | Test an idea and write a concept brief. |
+| Brainstorm | `/egm-brainstorm` | Explore a proposal, challenge assumptions, and produce a concept brief. |
 | Draft | `/egm-draft` | Turn a brief or existing notes into a design document. |
-| Review | `/egm-review` | Review a design with fresh, read-only Goldfish agents across five stages. |
-| Review loop | `/egm-review-loop` | Run a configured group of reviewers for a specific review task. |
-| Resolve | `/egm-resolve` | Work through review findings and agree on changes. |
-| Bootstrap | `/egm-bootstrap` | Create or update READMEs and codebase context for an existing codebase. |
-| Drift report | `/egm-drift-report` | Compare checked-in design documents with the current source code. |
+| Review | `/egm-review` | Review a design with fresh Goldfish agents across five stages. |
+| Resolve | `/egm-resolve` | Triage findings and agree on changes to the design. |
+| Review loop | `/egm-review-loop` | Run a configured set of reviewers for a specific review task. |
+| Bootstrap | `/egm-bootstrap` | Build README and codebase context for an existing project. |
+| Drift report | `/egm-drift-report` | Compare checked-in design documents with the current source. |
 
-All seven skills are user-invoked, exactly like upstream EGM: the agent does not decide on its own
-to start a design session or an expensive review. Start one by typing its `/egm-…` name; the
-upstream instructions plus the DeepSeek Harness integration notes are injected into that turn.
+All seven skills are **user-invoked**. The plugin doesn't start an expensive design or review process on its own, and it doesn't automatically start implementing a reviewed design.
 
-## Project layout
+### Where do the documents go?
 
-EGM works best when design artifacts live in the repository:
+EGM works with ordinary Markdown files. A typical project might keep specifications here:
 
 ```text
-path/to/project
-├── .agents/skills/<project>-elephant/SKILL.md   # optional: project context loader
+my-project/
+├── AGENTS.md
 └── docs/
     └── designs/
-        ├── SITEMAP.md                          # index of design artifacts
-        └── <feature>/DESIGN.md                 # design specification
+        └── webhook-delivery/
+            └── DESIGN.md
 ```
 
-Design documents, concept briefs, and review reports are plain Markdown written into your working
-directory, so they are reviewable in a pull request like any other change. The project-context
-skill is discovered by DeepSeek Harness at `<repo>/.agents/skills/`.
-
-To keep EGM's working artifacts out of the repository root while the design still lives in
-`docs/designs/`, add this line to the project's `AGENTS.md` and gitignore the folder:
+Your artifact locations depend on the skill and project setup. To direct EGM's working artifacts to a separate directory, add this to your project's `AGENTS.md`:
 
 ```text
 EGM artifact directory: .dev/docs
 ```
 
-## Package layout
+You can add that working directory to `.gitignore` while keeping finalized design documents under version control. That makes decisions, reviews, and implementation plans inspectable long after the original chat has ended.
 
-```
-dsh-egm/
-├── index.js            # package entry; re-exports the integration layer
-├── skills-host.js      # DSH integration layer: registers skills + injects the preamble
-├── reviewer-host.js    # egm_reviewer tool: fresh child in the read-only preset
-├── reviewer-tools.js   # preset tool guard: read/search allowlist, deny everything else
-├── cordis.patch.yml    # bundle patch: host rows + the egm-reviewer agent preset
-├── VERIFICATION.md     # isolation tests, commands, evidence
-├── CHANGELOG.md        # release history
-├── ADAPTATIONS.md      # upstream/adapter split and provenance
-├── EGM.md              # agent-facing codebase blueprint
-├── upstream.lock.json  # pinned upstream commit + SHA-256 of every vendored file
-├── scripts/            # check-upstream.mjs: upstream drift check
-├── diagrams/           # D2 sources + rendered SVGs for both diagrams
-├── ADAPTER-NOTES.md    # adapter notes for direct SKILL.md reads
-├── E2E-VERIFICATION.md # recorded brainstorm -> draft -> review verification run
-├── examples/           # repository-only: the recorded end-to-end run
-├── skills/             # seven upstream SKILL.md files, verbatim
-├── agents/             # nine upstream reviewer/orchestrator personas, verbatim
-├── resources/          # upstream standards, execution instructions and README, verbatim
-├── locale/             # plugin display metadata (en, zh)
-└── icon.svg
-```
+## Example run
 
-The adapter modules are the only runtime code this package adds.
+Want to see whether the reviewers actually find something useful?
 
-## Development
+The repository includes a [recorded end-to-end example](examples/e2e-verification/) using a small inventory application. It contains a concept brief, a design document, and review reports from all five stages.
 
-```sh
-node --test                            # full suite: manifest, engines, vendored content, adapter, reviewer isolation, upstream parity, extra-file integrity
-node scripts/check-upstream.mjs        # reports whether upstream EGM moved since the pinned commit
-```
+In one review, a Goldfish caught an important missing interface: the proposed inventory sweep needed a lock to cover a sequence of operations, but the design never specified a safe way for the sweep to acquire that lock. The revised design introduced a locked snapshot context manager rather than reaching into the inventory store's private lock. See the [finding and resolution](examples/e2e-verification/reviews/zoom_out_report.md).
 
-Diagrams: D2 sources under [`diagrams/`](diagrams/README.md); re-render with
-`node diagrams/render.mjs`.
+The run also shows the limits of the evidence: it used synthetic owner answers, auto-approved some draft gates, and split the review across supported presets; its final implementation-readiness re-audit returned **NO-GO** at the re-audit cap, with the remaining precision issues recorded and addressed afterward. It demonstrates the design workflow and its ability to surface concrete problems, **not** that the fixture feature was implemented or that the resulting design passed every gate. The example is historical `0.2.0` evidence.
 
-After editing vendored content (only when re-adapting a new upstream commit), refresh the lock with
-`node scripts/check-upstream.mjs --update-lock`. To iterate on the plugin after installing it,
-restart the Harness (or toggle the plugin row) so the host plugin re-reads the bundled files.
+See [E2E-VERIFICATION.md](E2E-VERIFICATION.md) for the environment, reviewer activations, artifacts, and concessions. The example files live in the GitHub repository; they aren't included in the npm package.
 
-## Staying in sync with upstream
+## Feedback and support
 
-[`upstream.lock.json`](upstream.lock.json) pins the upstream commit
-(`a119668d7dc5d558664ba711d4671d11fb7270a8`) and the SHA-256 of every vendored file.
+Trying `dsh-egm` for the first time? Your experience is useful whether it worked or not.
 
-[`scripts/check-upstream.mjs`](scripts/check-upstream.mjs) compares that pin with upstream's default
-branch and reports which vendored files changed:
+- **Installation failed or something broke?** [Report a bug](https://github.com/dryw/dsh-egm/issues/new?template=bug_report.yml). Include the command, what happened, and your DSH and Node versions if known.
+- **Have an improvement or documentation suggestion?** [Request a feature](https://github.com/dryw/dsh-egm/issues/new?template=feature_request.yml).
+- **Want to describe your first run or ask a question?** [Open an issue](https://github.com/dryw/dsh-egm/issues/new/choose).
 
-```sh
-node scripts/check-upstream.mjs                # clean = exit 0, drift = exit 1
-node scripts/check-upstream.mjs --json         # machine-readable drift report
-node scripts/check-upstream.mjs --update-lock  # after refreshing the vendored files
+I'm especially interested in whether the plugin installed cleanly, whether the Goldfish reviewers started as expected, and whether their criticism changed your design.
+
+**Before sharing logs or examples:** remove API keys, credentials, personal information, and confidential project material. A small redacted reproduction is better than a full private transcript.
+
+## For maintainers and curious readers
+
+- [VERIFICATION.md](VERIFICATION.md) — reviewer isolation, reproducible tests, CI, and evidence.
+- [E2E-VERIFICATION.md](E2E-VERIFICATION.md) — the recorded design workflow and its limitations.
+- [ADAPTATIONS.md](ADAPTATIONS.md) and [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — upstream provenance and Harness-specific mechanics.
+- [CHANGELOG.md](CHANGELOG.md) — release history.
+- [diagrams/](diagrams/README.md) — the workflow diagrams and their sources.
+
+To run the package checks from a checkout:
+
+```bash
+node --test
+node scripts/check-upstream.mjs
 ```
 
-A daily GitHub Actions workflow
-([`.github/workflows/upstream-sync.yml`](.github/workflows/upstream-sync.yml)) runs the check and
-opens or refreshes a re-vendor issue on drift; if the check itself errors it opens or refreshes a second issue
-with the captured output. It only reports — a maintainer does the re-vendor by hand. Full process:
-[`scripts/README.md`](scripts/README.md).
+The upstream drift check reports changes; it never modifies or replaces the vendored files.
 
 ## License and attribution
 
-Licensed under the Apache License, Version 2.0. The skills, reviewer personas, standards and
-templates are vendored from [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model),
-Copyright Google LLC, under the Apache License, Version 2.0; see [NOTICE](NOTICE) and
-[ADAPTATIONS.md](ADAPTATIONS.md). The DeepSeek Harness adapter, bundle and reviewer preset are
-original work for this package.
+Licensed under the [Apache License, Version 2.0](LICENSE).
 
-This is not an officially supported Google product.
+The skills, reviewer personas, standards, and templates are vendored from [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model), Copyright Google LLC, under Apache-2.0. See [NOTICE](NOTICE) and [ADAPTATIONS.md](ADAPTATIONS.md). The DeepSeek Harness adapter, plugin bundle, and reviewer preset are original work in this package.
+
+`dsh-egm` is an independent community port. It is not affiliated with, endorsed by, or officially supported by Google.

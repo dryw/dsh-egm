@@ -2,3 +2,16 @@ node_modules/
 *.tgz
 *.log
 .DS_Store
+__pycache__/
+.pytest_cache/
+
+# Local development scratch, package-manager state and private raw evidence.
+# These are maintainer-local and are never part of the distributed package.
+.dev/
+.pnpm-store/
+.probe/
+.review-package/
+requirements-dev.txt
+tests/conftest.py
+tests/integration/sanitize_dsh.py
+tests/integration/fixtures/dsh/

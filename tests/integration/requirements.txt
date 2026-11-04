@@ -1,0 +1,11 @@
+pytest==8.3.5
+deepseek-harness-sdk==0.2.1rc2
+deepseek-harness-runtime-bin==0.2.1rc2
+pydantic==2.14.2
+pydantic-core==2.50.2
+annotated-types==0.8.0
+typing-extensions==4.16.0
+typing-inspection==0.4.4
+pluggy==1.7.0
+packaging==26.3
+iniconfig==2.3.1

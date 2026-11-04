@@ -6,9 +6,13 @@ that the vendored tree stays byte-faithful, that the DeepSeek Harness integratio
 layer injects the right preamble and reviewer isolation, and that the bundle
 manifest, locale and icon satisfy the DSH plugin contract.
 
+The separate [Python integration suite](../tests/integration/README.md) runs two keyless,
+real-Harness scenarios on Linux/Node 24/Python 3.12. It does not replace this JavaScript suite
+or add dependencies to its unit/content checks. Install its locked dependencies separately.
+
 ## Requirements
 
-- Node.js **>= 22** (validated on v24.16.0). No `npm install` is needed: the
+- Node.js **>= 22** (locally validated on v24.19.0). No `npm install` is needed: the
   suite imports only `node:` builtins and the package's own files.
 - Run from the package root (the directory containing `package.json`).
 
@@ -30,9 +34,9 @@ node --test "test/plugin.test.js"
 > directory itself, so Node tries to execute it as a test file and fails with
 > `Cannot find module .../test`. Use `node --test` or the quoted glob above.
 
-The suite currently has **54 tests** (`node --test` also lists the two helper modules
+The suite currently has **60 tests** (`node --test` also lists the two helper modules
 `test/helpers.js` and `test/upstream-fixtures.js` as file-level subtests, so its headline
-count is 56). Check against another DSH runtime by setting
+count is 62). Check against another DSH runtime by setting
 `DSH_RUNTIME_VERSION` (default `0.2.1-rc.5`, the version the `engines.dsh` range is
 validated against):
 
@@ -83,4 +87,16 @@ covered by equivalent checks here:
 | Portable plugin manifest and shared metadata consistency | `test/manifest.test.js`, `test/ui-meta.test.js` |
 | Marketplace/component path checks | not applicable: this bundle ships no marketplace or component paths; the DSH manifest and patch rows are checked instead |
 | Read-hook tests (POSIX shell) | not applicable: the package installs no hooks |
-| Trace-based harness integration tests | replaced by live probes recorded in the package review notes: upstream scenario probes through the installed skills, and the read-only reviewer isolation probe |
+| Trace-based harness integration tests | [keyless Python/native replay checks](../tests/integration/README.md) cover actual reviewer isolation/read-only enforcement and the installed-plugin workflow; [historical manual probes](../E2E-VERIFICATION.md) remain separate live-model evidence |
+
+## Upstream pin checks
+
+`test/upstream-pin.test.js` pins the assigned revision (`113a3af`), checks corpus provenance,
+and compares all mapped artifacts with `git show <target>:<path>` when EGM_SOURCE
+is set. Instruction and severity checks are content contracts, not model behavior
+proof. Reviewer tests now cover setup failure, broken presets and invalid callers.
+
+`docs/testing/` is excluded from npm and contains the upstream semantic assessments
+and local result records. The maintained [Python/native replay gate](../tests/integration/README.md)
+uses the public SDK and locked native replay runtime; see [VERIFICATION.md](../VERIFICATION.md)
+for the current Linux results and limits.

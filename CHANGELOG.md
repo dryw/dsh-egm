@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.2.3 — 2026-11-02 (unreleased)
+## 0.2.4 — 2026-11-03
+
+- Sync upstream EGM to `113a3af`, including context, identity and review-rule updates
+  plus the review `GoldfishContext` URL-file handling fix.
+- Fail closed on reviewer isolation setup errors and broken presets.
+- Add keyless replay tests for isolation, read-only enforcement and brainstorm/draft/review workflows.
+- Update CI actions and add Linux Node 24/Python 3.12 integration coverage.
+- Rewrite README for clearer onboarding and refresh verification docs.
+
+## 0.2.3 — 2026-11-02
 
 - Upstream pin refresh (`403d888…` → `a119668…`); no content changes.
 - Docs and CI only: Chinese README, diagrams, [VERIFICATION.md](VERIFICATION.md); no runtime

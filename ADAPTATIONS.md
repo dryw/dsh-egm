@@ -3,7 +3,7 @@
 `dsh-egm` packages [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model)
 for DeepSeek Harness. The skills, agent personas and shared standards are vendored **verbatim** from
 the upstream commit pinned in [upstream.lock.json](upstream.lock.json)
-(`a119668d7dc5d558664ba711d4671d11fb7270a8`). No skill text is forked for this harness. Upstream's
+(`113a3afc44e8f4f54722d7150d5701f65cc8ef7f`). No skill text is forked for this harness. Upstream's
 own rule is that one skill set serves every harness and each harness maps the generic instructions
 to its own tools; this package follows that rule.
 
@@ -78,11 +78,11 @@ This is enforced by the Harness, not by a persona instruction:
 Upstream EGM counts a harness as supported after `/egm-brainstorm`, `/egm-draft` and
 `/egm-review` run end to end through its plugin install, and records reviewer isolation as part of the
 tested surface
-([`docs/harnesses.md`](https://github.com/google/elephant-goldfish-model/blob/a119668d7dc5d558664ba711d4671d11fb7270a8/docs/harnesses.md)).
+([`docs/harnesses.md`](https://github.com/google/elephant-goldfish-model/blob/113a3afc44e8f4f54722d7150d5701f65cc8ef7f/docs/harnesses.md)).
 This package records that evidence: the bundle installs and registers the seven skills; reviewer
 isolation is enforced as described above; and the three commands ran end to end with all five review
 stages and 17 read-only reviewer activations ([E2E-VERIFICATION.md](E2E-VERIFICATION.md), recorded on
-0.2.0; no runtime changes since).
+0.2.0; historical evidence, not a rerun of this release).
 
 ## Not shipped
 
@@ -96,3 +96,28 @@ run.
 The vendored files are Copyright Google LLC and licensed under the Apache License 2.0; see
 [NOTICE](NOTICE) and [LICENSE](LICENSE). The adapter layer in this package is original work, released
 under the same license.
+
+## Release 0.2.4 at upstream 113a3af
+
+The preamble maps next-step invocations to DSH `/egm-*` forms, retains empty
+supplemental context, keeps Stage 6 design-only, and states linked-resource
+approval/realpath rules. Review intake also saves each approved `GoldfishContext`
+URL page as a file and passes its absolute path; a page that cannot be saved
+requires a local copy, or is omitted with a notice in a headless run. These are
+model instructions. Neither reading lists nor implementation file boundaries are
+host-enforced filesystem allowlists.
+Installed filesystem source preserves unconfined reads: cwd is a resolution
+default, not containment. This is source evidence, not a new outside-read test.
+
+Reviewer creation now installs a call guard before hiding and aborts on isolation
+setup errors; broken declared presets are rejected. Additional plugins can
+publish late or scope-local tools that remain visible, but non-allowlisted calls
+are denied. Names on the read allowlist are trusted capabilities: malicious
+replacement of an allowed read tool is outside this boundary.
+
+The [two-case Python/native replay gate](tests/integration/README.md) exercises the
+installed tarball through the public SDK with locked Harness 0.2.1-rc.5 services.
+It checks actual parent/child inputs, native read-only denials, successful reviewer
+outcomes, workflow reads/artifacts and bounded cleanup. It does not establish
+live-model compliance with linked-document policy. See [VERIFICATION.md](VERIFICATION.md)
+for current Linux results and evidence limits.

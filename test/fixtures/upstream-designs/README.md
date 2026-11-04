@@ -2,7 +2,7 @@
 
 Verbatim copies of EGM-authored design documents from
 [`google/elephant-goldfish-model`](https://github.com/google/elephant-goldfish-model)
-(Apache-2.0, Copyright Google LLC), commit `a119668d7dc5d558664ba711d4671d11fb7270a8`:
+(Apache-2.0, Copyright Google LLC), commit `113a3afc44e8f4f54722d7150d5701f65cc8ef7f`:
 
 - `docs/designs/review.md` → `review.md`
 - `docs/designs/draft.md` → `draft.md`

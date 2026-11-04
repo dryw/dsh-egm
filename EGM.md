@@ -85,8 +85,8 @@ prose: [README.md](./README.md), [ADAPTATIONS.md](./ADAPTATIONS.md),
 - Every reviewer activation is a fresh `spawn` child in the `egm-reviewer` preset with
   `maxDepth: 1` and `delivery: 'parent'`; `subagent_fork` is never used
   ([reviewer-host.js:103-116](./reviewer-host.js)).
-- The reviewer scope hides every global tool outside `ALLOWED_TOOLS` and the preset guard denies
-  any non-allowlisted call, as two independent layers
+- The reviewer scope hides non-read tools available at setup; late or scope-local tools can
+  remain visible. Preset and agent guards deny non-allowlisted calls; setup errors abort creation
   ([reviewer-host.js:66-75](./reviewer-host.js), [reviewer-tools.js:50-63](./reviewer-tools.js)).
 
 **Side effects of the root modules.**
@@ -162,26 +162,43 @@ prose: [README.md](./README.md), [ADAPTATIONS.md](./ADAPTATIONS.md),
   `--update-lock`, and reads git HEAD for `--update-lock --source`
   ([scripts/EGM.md](./scripts/EGM.md)).
 - **CI automation.** [.github/workflows/ci.yml](./.github/workflows/ci.yml) runs `node --test` on
-  Ubuntu with Node 22 and 24 and on Windows with Node 24, then asserts the packed file list;
+  Ubuntu with Node 22 and 24 and on Windows with Node 24, then asserts the packed file list.
+  A separate Linux Node 24/Python 3.12 job runs both keyless native replay integration cases;
   [.github/workflows/upstream-sync.yml](./.github/workflows/upstream-sync.yml) runs the drift check
   daily (06:00 UTC), opens or refreshes the upstream-tracking issue on drift, and opens or refreshes
   a separate "Upstream sync check failed" issue when the check itself errors
   ([ci.yml:13-37](./.github/workflows/ci.yml), [upstream-sync.yml:16-185](./.github/workflows/upstream-sync.yml)).
 - **Published files.** The npm tarball ships the vendored `skills/`, `agents/`, `resources/` and
   `locale/` trees, the adapter modules, the bundle patch, `scripts/check-upstream.mjs`, the human
-  documentation and this blueprint; the test suite, `examples/` and `.github/` stay
+  documentation and this blueprint; `test/`, `tests/`, `docs/testing/`, `examples/` and `.github/` stay
   repository-only ([package.json:20-44](./package.json), [ci.yml:38-121](./.github/workflows/ci.yml)).
 
 ## System Verification
 
 - Run: `node --test` from the package root ([package.json:7-10](./package.json)). The suite is
-  twelve `test/*.test.js` files; its per-suite contracts are documented in
+  documented by per-suite contracts in
   [test/README.md](./test/README.md).
 - CI runs the same command on Ubuntu with Node 22 and 24 and on Windows with Node 24, then checks
-  that the packed file list contains the runtime files and no `test/`, `examples/` or `.github/`
-  entries ([ci.yml:13-37](./.github/workflows/ci.yml), [ci.yml:38-121](./.github/workflows/ci.yml)).
+  that the packed file list contains the runtime files and no `test/`, `tests/`,
+  `docs/testing/`, `examples/` or `.github/` entries ([ci.yml:13-37](./.github/workflows/ci.yml), [ci.yml:38-121](./.github/workflows/ci.yml)).
+- The separate Linux Node 24/Python 3.12 CI job runs both [keyless native replay cases](./tests/integration/README.md)
+  through the public Python SDK with the locked runtime, retaining synthetic evidence on failure.
 - Upstream drift check: `node scripts/check-upstream.mjs` (networked; exit 0 clean, 1 drift,
   2 error); the network-free `node scripts/check-upstream.mjs --help` smoke test exits 0
   ([scripts/EGM.md](./scripts/EGM.md)).
 - Link integrity: every relative link in this blueprint and its child contracts resolves to an
   existing file (verified during the 2026-11-01 bootstrap run).
+
+## Upstream 113a3af release addendum
+
+Release 0.2.4 pins 113a3afc44e8f4f54722d7150d5701f65cc8ef7f.
+Reviewer creation installs the call guard before hiding and fails closed on setup
+errors; broken preset diagnostics prevent spawning. The preamble supplies DSH
+invocations, stage-specific reading lists, approval rules, identity, private
+scratch guidance and the review URL-file rule (save an approved page, pass its
+absolute path, or ask for a local copy / omit it with a notice). None supplies
+read-path confinement or implementation write allowlists. The maintained two-case Python/native replay gate uses the public SDK and locked
+native replay runtime; see [tests/integration/README.md](tests/integration/README.md)
+and [VERIFICATION.md](VERIFICATION.md) for current Linux results and limits.
+Repository-only `docs/testing/` contains the semantic assessments and result records. Historical line anchors and E2E evidence
+above describe the earlier baseline; consult current source for exact locations.

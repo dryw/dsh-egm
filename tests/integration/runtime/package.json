@@ -1,0 +1,13 @@
+{
+  "name": "dsh-egm-integration-runtime",
+  "private": true,
+  "type": "module",
+  "engines": {"node": "24.x"},
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-llm-replay": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-agent-preset-registry": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-agent-preset": "0.2.1-rc.5",
+    "pnpm": "11.25.0"
+  }
+}

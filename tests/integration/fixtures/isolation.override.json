@@ -1,0 +1,225 @@
+{
+  "controls": [
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
+          "blockType": "tool-call"
+        },
+        {
+          "type": "tool-call-delta",
+          "index": 0,
+          "id": "controls-read",
+          "name": "read",
+          "argumentsDelta": "{\"file_path\": \"__WORKSPACE__/write-sentinel.txt\", \"offset\": 1, \"limit\": 2000}"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "tool-call",
+            "id": "controls-read",
+            "name": "read",
+            "arguments": "{\"file_path\": \"__WORKSPACE__/write-sentinel.txt\", \"offset\": 1, \"limit\": 2000}"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "tool-calls"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
+          "blockType": "tool-call"
+        },
+        {
+          "type": "tool-call-delta",
+          "index": 0,
+          "id": "controls-write",
+          "name": "write",
+          "argumentsDelta": "{\"file_path\": \"__WORKSPACE__/write-sentinel.txt\", \"content\": \"CHILD_MUTATION\\n\"}"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "tool-call",
+            "id": "controls-write",
+            "name": "write",
+            "arguments": "{\"file_path\": \"__WORKSPACE__/write-sentinel.txt\", \"content\": \"CHILD_MUTATION\\n\"}"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "tool-calls"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
+          "blockType": "tool-call"
+        },
+        {
+          "type": "tool-call-delta",
+          "index": 0,
+          "id": "controls-bash",
+          "name": "bash",
+          "argumentsDelta": "{\"description\": \"Write the disposable command sentinel\", \"command\": \"printf 'CHILD_MUTATION\\\\n' > command-sentinel.txt\", \"workdir\": \"__WORKSPACE__\", \"timeoutMs\": 1000, \"run_in_background\": false}"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "tool-call",
+            "id": "controls-bash",
+            "name": "bash",
+            "arguments": "{\"description\": \"Write the disposable command sentinel\", \"command\": \"printf 'CHILD_MUTATION\\\\n' > command-sentinel.txt\", \"workdir\": \"__WORKSPACE__\", \"timeoutMs\": 1000, \"run_in_background\": false}"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "tool-calls"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
+          "blockType": "text"
+        },
+        {
+          "type": "text-delta",
+          "index": 0,
+          "text": "PARENT_ACK"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "text",
+            "text": "PARENT_ACK"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "stop"
+          }
+        }
+      ]
+    }
+  ],
+  "isolation": [
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
+          "blockType": "tool-call"
+        },
+        {
+          "type": "tool-call-delta",
+          "index": 0,
+          "id": "isolation-spawn",
+          "name": "egm_reviewer",
+          "argumentsDelta": "{{fromRequest:(?:^|\\n)EGM_REVIEWER_JSON=([^\\r\\n]+)}}"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "tool-call",
+            "id": "isolation-spawn",
+            "name": "egm_reviewer",
+            "arguments": "{{fromRequest:(?:^|\\n)EGM_REVIEWER_JSON=([^\\r\\n]+)}}"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "tool-calls"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
+          "blockType": "text"
+        },
+        {
+          "type": "text-delta",
+          "index": 0,
+          "text": "PARENT_ACK"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "text",
+            "text": "PARENT_ACK"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "stop"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "chunks",
+      "chunks": [
+        {
+          "type": "block-start",
+          "index": 0,
+          "blockType": "text"
+        },
+        {
+          "type": "text-delta",
+          "index": 0,
+          "text": "PARENT_ACK"
+        },
+        {
+          "type": "block-end",
+          "index": 0,
+          "block": {
+            "type": "text",
+            "text": "PARENT_ACK"
+          }
+        },
+        {
+          "type": "finish",
+          "reason": {
+            "kind": "stop"
+          }
+        }
+      ]
+    }
+  ]
+}

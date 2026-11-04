@@ -8,6 +8,7 @@ vars: {
   d2-config: {
     theme-id: 0
     dark-theme-id: 200
+    pad: 5
   }
 }
 
@@ -127,15 +128,6 @@ flow: {
     stroke-width: 0
   }
 
-  title: "Elephant Goldfish — Simplified Workflow" {
-    shape: text
-    style: {
-      font-size: 30
-      bold: true
-      font-color: "#2B7BC1"
-    }
-  }
-
   diagram: {
     label: ""
     grid-rows: 3
@@ -225,8 +217,8 @@ flow: {
       detail: "Build the approved design" {class: description}
     }
 
-    pad1.class: invisible
-    pad2.class: invisible
+    #pad1.class: invisible
+    #pad2.class: invisible
 
     # BLUE: design and exploration.
     you -> elephant: {class: blue-flow}
