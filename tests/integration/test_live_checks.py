@@ -202,3 +202,16 @@ def test_parent_receipt_does_not_count_as_a_reviewer():
     run = {"records": [{"kind": "receipt", "text": "15 reviewers completed"}], "notifications": [], "sessions": {}}
     with pytest.raises(AssertionError, match="No native reviewer"):
         child_traces(run)
+
+
+def test_progress_reports_reviewers_and_writes(capsys):
+    from test_dsh_live import progress
+    labels = {}
+    event = lambda kind, data: {"sessionId": "P", "event": {"type": kind, "data": data}}
+    progress("session.event", event("subagent/catalog", {"childId": "C", "label": "Stage 5 zoom-out"}), "P", labels, 0)
+    progress("session.event", event("tool/call", {"name": "write", "arguments": '{"file_path": "/w/zoom_out_report.md"}'}), "P", labels, 0)
+    progress("session.event", event("tool/call", {"name": "write", "arguments": "not json"}), "P", labels, 0)
+    progress("subagent.finished", {"childSessionId": "C", "status": "ok"}, "P", labels, 0)
+    lines = capsys.readouterr().out.splitlines()
+    assert [line.split("] ", 1)[1] for line in lines] == [
+        "reviewer started: Stage 5 zoom-out", "write: zoom_out_report.md", "reviewer finished (ok): Stage 5 zoom-out"]

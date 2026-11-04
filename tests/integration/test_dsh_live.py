@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 from unittest.mock import patch
 import uuid
 
@@ -141,6 +142,27 @@ def write_identity(root, plugin, tarball, model, surface):
     })
 
 
+def progress(method, payload, parent, labels, started):
+    """One line per reviewer start/finish and per parent file write; visible with pytest -s."""
+    line = None
+    if method == "session.event" and payload.get("sessionId") == parent:
+        event = payload.get("event", {})
+        data = event.get("data", {})
+        if event.get("type") == "subagent/catalog":
+            labels[data.get("childId")] = data.get("label", "reviewer")
+            line = f"reviewer started: {labels[data.get('childId')]}"
+        elif event.get("type") == "tool/call" and data.get("name") in ("write", "edit"):
+            try:
+                line = f"{data['name']}: {Path(json.loads(data['arguments'])['file_path']).name}"
+            except (KeyError, TypeError, ValueError):
+                pass
+    elif method == "subagent.finished":
+        line = f"reviewer finished ({payload.get('status')}): {labels.get(payload.get('childSessionId'), payload.get('childSessionId'))}"
+    if line:
+        elapsed = int(time.monotonic() - started)
+        print(f"  [{elapsed // 60:02d}:{elapsed % 60:02d}] {line}", flush=True)
+
+
 def run_dsh(installed, root, content, provider="deepseek-official", model=None, provider_rows=None, workspace=None):
     """One SDK session. Record native evidence and always close the owned client."""
     home, plugin, tarball = installed
@@ -165,8 +187,10 @@ def run_dsh(installed, root, content, provider="deepseek-official", model=None, 
                                    "dsh_home": str(home)})
     notifications = []
     client = HarnessClient(config)
+    labels, started = {}, time.monotonic()
     def collect(n):
         notifications.append({"method": n.method, "payload": n.payload})
+        progress(n.method, n.payload, parent, labels, started)
     (root / "input.json").write_text(json.dumps(content), encoding="utf-8")
     print(f"Native evidence: {root}")
     try:

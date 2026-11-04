@@ -15,6 +15,9 @@ DSH_EGM_LIVE=1 /home/dryw/.cache/dsh-egm-acceptance-venv/bin/python -m pytest te
 unset DEEPSEEK_API_KEY
 ```
 
+With `-s`, each run prints a timestamped line when a reviewer starts or finishes
+and when the parent writes or edits a file, so a long review shows its stage.
+
 This runs the whole suite against the tarball, so install, isolation and
 workflow are separate outcomes. It spends API credit: 32,768 output tokens per
 response, a 20-minute SDK wait, no provider retries and no total cap. Keep native
