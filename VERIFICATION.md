@@ -95,5 +95,17 @@ separately.
   `docs/designs/line-count.md` rather than `design_draft.md` as the prompt asks;
   the parent applied each stage's fixes to both. Upstream's assertions do not
   check the review target. Isolation was not rerun in this attempt (`-k brainstorm`);
-  it passed on the same tarball's earlier full run. [Historical results](E2E-VERIFICATION.md)
+  it passed on the same tarball's earlier full run.
+- Same tarball run without reasoning, third attempt: the parent wrote the
+  brainstorm brief itself and started no brainstorm reviewers (9 of 15). Failed.
+- **Full suite with reasoning enabled** (2026-11-04, `deepseek-flash`,
+  `reasoningEffort: high`, tarball from `de5a022`): 25 of 25 passed. Install,
+  both isolation tests, reviewers (15), stage order, required reads, skill
+  delivery and upstream's unchanged assertions all pass; the final design is
+  byte-identical to `design_draft.md`, which every stage reviewed. Notes for the
+  record: the parent used `send_message` once to ask a brainstorm reviewer to
+  resend a truncated finding, so that reviewer ran a second turn on a
+  parent-written message; and it kept editing `design_draft.md` for about 20
+  seconds after the stage 5 reviewer had read it. The manual interactive run is
+  still pending. [Historical results](E2E-VERIFICATION.md)
   do not establish acceptance of the current package.
