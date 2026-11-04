@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "google-codex-line-count-v1",
+  "source_repository": "https://github.com/google/elephant-goldfish-model",
+  "source_commit": "113a3afc44e8f4f54722d7150d5701f65cc8ef7f",
+  "source_path": "tests/integration/test_codex.py",
+  "source_git_blob_sha1": "6ae169192f6817b2f9b33ebb495c4432866c0caa",
+  "source_function": "test_brainstorm_draft_review",
+  "source_variable": "prompt",
+  "extraction": "Python ast.literal_eval of prompt assignment; UTF-8 encoded without newline translation",
+  "prompt_sha256": "9e7a49cefaeb618fcf8aede675af825cc2c3ee7aab51a441c7689da45747630f",
+  "prompt_bytes": 1674,
+  "encoding": "UTF-8",
+  "line_endings": "LF",
+  "final_newline": true,
+  "companion_byte_equal": true,
+  "host_wrapper_sha256": null,
+  "actual_parent_request_sha256": null
+}

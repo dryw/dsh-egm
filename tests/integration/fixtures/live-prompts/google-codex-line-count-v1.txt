@@ -1,0 +1,23 @@
+Run the installed EGM plugin's brainstorm, draft, and review
+skills on this synthetic test project. Read the skills from your available
+skills inventory; do not load a source checkout instead of the installed plugin.
+Feature: an offline command that counts nonblank UTF-8 lines in one local file.
+Use only the Python standard library. Print one decimal count plus newline.
+Whitespace-only lines are blank; empty files produce 0. Invalid UTF-8, a missing
+file, and permission errors produce a clear stderr error and exit 1; success
+exits 0. No network, recursive traversal, writes to input, or extra features.
+Author: test fixture. Produce design artifacts only, no implementation code.
+
+This is a noninteractive integration fixture. For this fixture only, the
+synthetic user explicitly approves the anchored hypothesis, Goldfish reviews,
+each drafted section, and finalization to docs/designs/line-count.md up front.
+These simulated approvals do not test interactive approval-gate behavior.
+Use direct dispatch for this test so each reviewer is visible in the parent
+trace; test nested delegation separately. Run real fresh-context native
+reviewers, wait for completion, and write concepts_brief.md and design_draft.md.
+Then run egm-review on design_draft.md with Step: uninterrupted and no additional
+GoldfishContext. Produce all five stage reports, including implementation
+readiness. Use distinct report paths; do not overwrite another stage's report.
+Do not publish, commit, use external services or memory, or modify the plugin.
+Do not invent completed reviewers. Stop with a clear failure if required tools
+are unavailable. Keep the fixture small and reviews concise.

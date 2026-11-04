@@ -155,9 +155,11 @@ jobs:
           "$RUNNER_TEMP/egm-venv/bin/python" -m pip install -r tests/integration/requirements.txt
           "$RUNNER_TEMP/egm-venv/bin/python" -m pip check
 
-      - name: Run both keyless real-host scenarios
+      - name: Run keyless adapter checks
+        env:
+          DSH_EGM_LIVE: '0'
         run: |
-          "$RUNNER_TEMP/egm-venv/bin/python" -m pytest tests/integration/test_dsh.py -q --basetemp "$RUNNER_TEMP/egm-replay"
+          "$RUNNER_TEMP/egm-venv/bin/python" -m pytest tests/integration -q --basetemp "$RUNNER_TEMP/egm-replay"
 
       - name: Retain synthetic failure evidence
         if: failure()
