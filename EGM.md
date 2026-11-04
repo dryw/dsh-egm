@@ -128,7 +128,7 @@ prose: [README.md](./README.md), [ADAPTATIONS.md](./ADAPTATIONS.md),
 
 - **Vendored parity.** The 26 adapted upstream files are byte-identical to
   `google/elephant-goldfish-model` at the pinned commit, and their SHA-256 values are recorded in
-  [upstream.lock.json](./upstream.lock.json); `test/upstream-sync.test.js` fails the package if a
+  [upstream.lock.json](./upstream.lock.json); `test/upstream-lock.test.js` fails the package if a
   shipped file or vendored fixture drifts ([ADAPTATIONS.md](./ADAPTATIONS.md),
   [scripts/EGM.md](./scripts/EGM.md)).
 - **No harness fork.** Harness mechanics are supplied only by the injected `<dsh_integration>`

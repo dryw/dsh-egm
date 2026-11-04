@@ -50,15 +50,7 @@ error is visible.
 ### Adding a newly adapted upstream file
 
 1. Add `[upstreamPath, adaptedPath]` to `ADAPTED_FILES` in `check-upstream.mjs`.
-2. If it is vendored as a test fixture, add it to `VENDORED_FIXTURES` too.
-3. Run `node scripts/check-upstream.mjs --update-lock --source <checkout>` and commit
-   both the script change and `upstream.lock.json`; `test/upstream-sync.test.js`
+2. Run `node scripts/check-upstream.mjs --update-lock --source <checkout>` and commit
+   both the script change and `upstream.lock.json`; `test/upstream-lock.test.js`
    fails if the two drift apart.
 
-### Vendored fixtures
-
-`test/fixtures/upstream-scenarios/`, `test/fixtures/upstream-skills/` and
-`test/fixtures/upstream-designs/` hold verbatim upstream files. Refresh them from
-the new upstream commit, then run `node scripts/check-upstream.mjs --update-lock`
-so the recorded SHA-256 values match; `test/upstream-sync.test.js` verifies the
-vendored bytes against the lock.

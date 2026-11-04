@@ -1,37 +1,82 @@
 # Verification
 
 Upstream pin: `113a3afc44e8f4f54722d7150d5701f65cc8ef7f` in
-[upstream.lock.json](upstream.lock.json). Content tests check vendored hashes;
-`EGM_SOURCE=/path/to/upstream npm test` also compares pinned Git objects.
-These are content checks, not model execution.
+[upstream.lock.json](upstream.lock.json). This page maps each upstream support
+requirement to the dsh-egm check that answers it, and states each limit.
 
-## Current tests
+Sources at that commit: A = [`docs/designs/additional-harnesses.md`](https://github.com/google/elephant-goldfish-model/blob/113a3afc44e8f4f54722d7150d5701f65cc8ef7f/docs/designs/additional-harnesses.md)
+("Architecture and data flow", "Validation and release gates");
+H = [`docs/harnesses.md`](https://github.com/google/elephant-goldfish-model/blob/113a3afc44e8f4f54722d7150d5701f65cc8ef7f/docs/harnesses.md);
+T = [`TESTING.md`](https://github.com/google/elephant-goldfish-model/blob/113a3afc44e8f4f54722d7150d5701f65cc8ef7f/TESTING.md).
 
-- `npm test`: adapter unit tests, content parity and package contracts.
-- `python -m pytest tests/integration -q`: one native replay adapter scenario,
-  skill-delivery and evidence checks; two paid cases skip by default.
-- `npm pack --dry-run --json`: inspect the package payload.
+## Commands
 
-The adapter scenario tests successful parent operations, fresh reviewer context,
-read access, exact write/shell guard denials and native completion. It does not
-script brainstorm/draft/review. That workflow is exercised by the opt-in live test.
-See [setup](tests/integration/README.md) and [live commands](tests/integration/LIVE-README.md).
+| Layer | Command | Cost |
+| --- | --- | --- |
+| Node suite | `npm test` (CI: Linux and Windows) | Free |
+| Keyless DSH tests | `pytest tests/integration -q` (CI: Linux) | Free |
+| Paid DSH tests | `DSH_EGM_LIVE=1 pytest tests/integration -q`, see [LIVE-README](tests/integration/LIVE-README.md) | API credit |
+| Manual interactive run | steps in [LIVE-README](tests/integration/LIVE-README.md) | API credit |
 
-Reviewers have a tool-name allowlist, not a filesystem path sandbox. Reading-list
-boundaries remain instructions. Replay does not prove review quality, interactive
-approval handling, stage ordering or live-model instruction following.
+## Requirement map
 
-## Latest local result
+| # | Upstream requirement | Check, record or limit | Status |
+| --- | --- | --- | --- |
+| 1 | Manifest parsing, identity, version (A) | `manifest`, `engines`, `ui-meta` tests; CI pack check | Pass |
+| 2 | Persona, standard, guide paths in the installed layout (A) | `test_install`: every packed file equals the installed file | Pass (keyless) |
+| 3 | Adapter tool restrictions (A) | `reviewer` test; `test_adapter` real denials | Pass |
+| 4 | No copies of shared behavior; no fork of skill text (A, H) | `upstream-lock`: the bundled copy is byte-identical to `113a3af`, a pinned copy, not a fork. The preamble restates some upstream rules in DSH terms. Whether an external package counts is row 19 | Pass; packaging open |
+| 5 | Negative fixtures for each evidence parser (A) | Synthetic cases in `test_live_checks.py` | Pass (keyless) |
+| 6 | Clean host profile, fixed candidate (A) | Disposable `DSH_HOME`; `DSH_EGM_TARBALL` | Paid run |
+| 7 | Candidate SHA, checksum, host version and surface, model, date (A) | `identity.json` | Paid run |
+| 8 | Install, workflow, isolation recorded separately (A) | `test_install`; `test_brainstorm_draft_review`; `test_adapter` and `test_fresh_context_isolation` | Paid run |
+| 9 | Brainstorm, draft, review end to end through the install (H) | `test_brainstorm_draft_review` | Paid run |
+| 10 | A real human approval pause (A) | Manual run record, quoting the native question and answer rows | Manual run |
+| 11 | Reviewer starts and completions from host records (A) | `child_traces` | Paid run |
+| 12 | A missing reviewer is not a passing review; no inline simulation (A) | `child_traces`; parent-receipt case | Pass (keyless) |
+| 13 | Sequential stages (T) | `assert_stage_order` | Paid run |
+| 14 | Random parent-only marker (A) | `test_fresh_context_isolation`; `test_adapter` | Pass (keyless) |
+| 15 | Reviewer reads persona, target and standard (A, T) | `assert_required_reads`. Limit: `GoldfishContext` entries are a reading list, not checked | Paid run |
+| 16 | Inspect host-injected context; memory and MCP (A) | `AGENTS.md` probe in `test_adapter` (`host-context.json`); exact reviewer tool set `{read, read_image, glob, grep}` | Seen: DSH 0.2.1-rc.5 puts project `AGENTS.md` into the reviewer request. User-level instruction files and memory not probed |
+| 17 | Read-only enforcement on a disposable fixture (A) | `test_adapter` sentinels and exact guard errors | Pass (keyless) |
+| 18 | Missing delegation stops with a clear message (A) | `reviewer` fail-closed errors | Pass. Limit: the skill stopping is model behavior |
+| 19 | Manifest in the upstream repo, `docs/harnesses.md` entry, transcripts in the PR (H) | Upstream decides: external package, or a manifest and adapter moved upstream ([#240](https://github.com/google/elephant-goldfish-model/issues/240)) | Open |
+| 20 | A successful read is non-error, non-empty text and does not prove the whole file was read (T) | Rule in `assert_required_reads` | Limit stated |
+| 21 | Reviewers cannot reach unrelated reports through the filesystem (A) | None: DSH guards tool names, not paths | Limit |
 
-Linux/Node 24/Python 3.12 with the locked DSH runtime: three Python tests passed,
-two paid tests skipped. CI is configured to run the keyless suite; configuration
-is not evidence of a hosted CI run. No new paid run was performed for this change.
+## Live results
 
-The simplified live attempt in `/home/dryw/.cache/dsh-egm-live-1793804340` passed
-isolation and completed 15 workflow children, but failed upstream draft/final
-equality: only the destination changed Status from Draft to In Review.
-This remains a failed acceptance attempt.
+`test_brainstorm_draft_review` runs every check and writes `checks.json` before
+it fails on any of them, so one failure never hides the rest. To check retained
+or manual evidence without changing it:
 
-Historical results: [0.2.0 manual run](E2E-VERIFICATION.md),
-[464db evaluation](docs/testing/RESULTS-464DB.md). They do not establish acceptance
-of the current package or testing changes.
+```sh
+python tests/integration/test_dsh_live.py check <evidence-dir> --out <checks.json>
+```
+
+A Status-only difference between `design_draft.md` and the final design is listed
+under `deviations` as `status-line-only`, and the upstream assertion still fails.
+The record row then follows upstream's Antigravity row: Review "Pass (fixture)"
+only when `upstream_artifacts` is the sole failing check and `deviations` is
+exactly `["status-line-only"]`, with Notes "The final design differs from the
+draft in one `Status` line"; otherwise Fail.
+
+## Record row template
+
+Columns as in upstream `TESTING.md`, "Harness Test Record". Fill one row for the
+automated run and one for the manual run, because upstream records surfaces
+separately.
+
+```text
+| DeepSeek Harness (<surface>) | <dsh_version> | <date_utc> | <test_install> | <Brainstorm> | <Draft> | <Review> | dsh-egm <package_version> from <source_sha>, tarball SHA-256 <tarball_sha256>; model <model>. <reviewers>, <stage_order>, <required_reads>. <deviations>. <limits> |
+```
+
+## Latest results
+
+- Retained 0.2.4 evidence (2026-11-04, `deepseek-flash`, checked read-only with
+  the command above): reviewers pass (15), stage order pass, required reads fail
+  (`missing Persona line`, fixed since by persona-by-path), skill delivery
+  unverifiable (install directory not recorded), upstream artifacts fail with
+  deviation `status-line-only`. This remains a failed acceptance attempt.
+- No paid run has used the current tests. [Historical results](E2E-VERIFICATION.md)
+  do not establish acceptance of the current package.

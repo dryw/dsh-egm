@@ -87,9 +87,9 @@ stages and 17 read-only reviewer activations ([E2E-VERIFICATION.md](E2E-VERIFICA
 ## Not shipped
 
 Upstream's `docs/` integration guides, Python test harness, site, release tooling and marketplace
-manifests are not part of this package. Upstream's behavioural scenario suites are vendored under
-`test/fixtures/` as content-parity fixtures; `node --test` checks their content, not an end-to-end
-run.
+manifests are not part of this package. Upstream's behavioural scenario suites are not vendored: the
+shipped skills are byte-identical to upstream and hash-pinned, so upstream's own suites already cover
+their text.
 
 ## License and attribution
 
@@ -115,9 +115,11 @@ publish late or scope-local tools that remain visible, but non-allowlisted calls
 are denied. Names on the read allowlist are trusted capabilities: malicious
 replacement of an allowed read tool is outside this boundary.
 
-The [two-case Python/native replay gate](tests/integration/README.md) exercises the
+Reviewers now receive their persona as a `Persona:` path and read the upstream
+file themselves, the documented approach for hosts without registered persona
+agents. The 0.2.4 live run showed pasted personas arrived abridged.
+
+The [Python integration suite](tests/integration/README.md) exercises the
 installed tarball through the public SDK with locked Harness 0.2.1-rc.5 services.
-It checks actual parent/child inputs, native read-only denials, successful reviewer
-outcomes, workflow reads/artifacts and bounded cleanup. It does not establish
-live-model compliance with linked-document policy. See [VERIFICATION.md](VERIFICATION.md)
-for current Linux results and evidence limits.
+See [VERIFICATION.md](VERIFICATION.md) for how each upstream requirement maps to
+a check, and for current results and limits.
