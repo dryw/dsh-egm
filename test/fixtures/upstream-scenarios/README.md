@@ -4,7 +4,7 @@ These files are **copied verbatim** (byte-for-byte) from upstream
 [`google/elephant-goldfish-model`](https://github.com/google/elephant-goldfish-model),
 Apache-2.0, Copyright Google LLC:
 
-- Source commit: `464db031e7dd1b9a79803ac8ea45f55c7c20c5bc`
+- Source commit: `113a3afc44e8f4f54722d7150d5701f65cc8ef7f`
 - Source paths: `skills/<skill>/test_scenarios.yaml` → `<skill>.yaml`
 
 Upstream uses these as behavioural evaluation scenarios (user turns plus

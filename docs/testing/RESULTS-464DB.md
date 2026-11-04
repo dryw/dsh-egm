@@ -4,7 +4,9 @@ Observed on 2026-11-03, first in an isolated candidate worktree and then on the
 primary integrated checkout, based on local harness
 checkpoint `24d245f84b6496ee278c3b671aa07e1cd653e171`. The upstream refresh and adapter
 hardening were applied before these checks. This is a local evaluation, not a
-release record or hosted Actions result.
+release record or hosted Actions result. The 0.2.4 release later re-pinned to
+`113a3af`; see [UPSTREAM-113A3AF-ASSESSMENT.md](UPSTREAM-113A3AF-ASSESSMENT.md).
+The results below describe the 464db integration.
 
 | Check | Result |
 | --- | --- |

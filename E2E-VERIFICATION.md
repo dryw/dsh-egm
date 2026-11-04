@@ -1,7 +1,7 @@
 # EGM end-to-end verification record — dsh-egm 0.2.0
 
 This is historical evidence. It was not rerun as a live-model workflow for the
-unreleased upstream 464db candidate. See [VERIFICATION.md](VERIFICATION.md) for the current keyless native-replay gate
+0.2.4 release (upstream `113a3af`). See [VERIFICATION.md](VERIFICATION.md) for the current keyless native-replay gate
 and its evidence limits.
 
 Verification for upstream EGM's support criterion: `/egm-brainstorm`, `/egm-draft` and `/egm-review`

@@ -1,16 +1,22 @@
 # Verification
 
-This account covers the integrated upstream 464db candidate, evaluated locally on
-2026-11-03. The package version remains 0.2.3; this update has not been released.
+This document covers the 0.2.4 release, which vendors upstream EGM at
+`113a3afc44e8f4f54722d7150d5701f65cc8ef7f`. The integrated 464db candidate was
+evaluated locally on 2026-11-03; the single follow-up upstream commit 113a3af
+re-vendors the review URL-file handling and is covered by the offline and hosted
+CI gates.
 
 ## Provenance
 
 `upstream.lock.json` pins `google/elephant-goldfish-model` at
-`464db031e7dd1b9a79803ac8ea45f55c7c20c5bc`. All 26 runtime mappings and 16 fixture
+`113a3afc44e8f4f54722d7150d5701f65cc8ef7f`. All 26 runtime mappings and 16 fixture
 mappings match the target Git objects and lock SHA-256 values under the documented
 CRLF-to-LF normalization policy. Licensing and attribution remain unchanged.
-The refresh changes eleven runtime documents and their corresponding fixtures;
-[the semantic assessment](docs/testing/UPSTREAM-464DB-ASSESSMENT.md) explains their scope.
+The 464db refresh changed eleven runtime documents and their corresponding
+fixtures; the 113a3af follow-up changes the two review skills and their scenarios.
+[The 464db semantic assessment](docs/testing/UPSTREAM-464DB-ASSESSMENT.md) and
+[the 113a3af follow-up assessment](docs/testing/UPSTREAM-113A3AF-ASSESSMENT.md)
+explain their scope.
 
 ```sh
 EGM_SOURCE=/path/to/local/upstream npm test
@@ -23,7 +29,7 @@ lock/hash and content-parity checks still run. Scenario parity exercises 43 of 6
 text-pattern assertions; the remaining 26 are excluded because upstream itself
 does not satisfy them. These checks establish content contracts, not model behavior.
 
-`node scripts/check-upstream.mjs --ref 464db031e7dd1b9a79803ac8ea45f55c7c20c5bc`
+`node scripts/check-upstream.mjs --ref 113a3afc44e8f4f54722d7150d5701f65cc8ef7f`
 checks the selected revision remotely; omitting `--ref` checks live main, which
 may have advanced. Exit 1 indicates drift and exit 2 a check error. Neither is a
 substitute for the independent Git-object comparison. Refresh the lock only with
@@ -106,10 +112,11 @@ not establish reviewer insight, live-model instruction following, interactive
 approval handling, graceful protocol shutdown, or platforms/versions outside the
 exercised tuple. Cleanup checks owned SDK runtime PIDs, not a general process-tree
 audit. Windows, Agent Team, outside-workspace reads and live-model acceptance were
-not exercised in this candidate evaluation.
+not exercised in the 464db candidate evaluation.
 
 [E2E-VERIFICATION.md](E2E-VERIFICATION.md) retains the historical 2026-10-31 live-model
 run of plugin 0.2.0, including 17 reviewers and brainstorm/draft/review artifacts.
-Its results do not establish the refreshed candidate's live-model workflow behavior.
-[The candidate result record](docs/testing/RESULTS-464DB.md) records the local
-Linux evaluation; it does not certify an archive or a release.
+Its results do not establish the release's live-model workflow behavior.
+[The 464db result record](docs/testing/RESULTS-464DB.md) records the local
+Linux evaluation; it does not certify an archive or a release. The 113a3af
+follow-up is covered by the maintained offline suite and the hosted CI gates.

@@ -189,15 +189,16 @@ prose: [README.md](./README.md), [ADAPTATIONS.md](./ADAPTATIONS.md),
 - Link integrity: every relative link in this blueprint and its child contracts resolves to an
   existing file (verified during the 2026-11-01 bootstrap run).
 
-## Upstream 464db candidate addendum
+## Upstream 113a3af release addendum
 
-The uncommitted candidate pins 464db031e7dd1b9a79803ac8ea45f55c7c20c5bc.
+Release 0.2.4 pins 113a3afc44e8f4f54722d7150d5701f65cc8ef7f.
 Reviewer creation installs the call guard before hiding and fails closed on setup
 errors; broken preset diagnostics prevent spawning. The preamble supplies DSH
-invocations, stage-specific reading lists, approval rules, identity and private
-scratch guidance. None supplies read-path confinement or implementation write
-allowlists. The maintained two-case Python/native replay gate uses the public SDK and locked
+invocations, stage-specific reading lists, approval rules, identity, private
+scratch guidance and the review URL-file rule (save an approved page, pass its
+absolute path, or ask for a local copy / omit it with a notice). None supplies
+read-path confinement or implementation write allowlists. The maintained two-case Python/native replay gate uses the public SDK and locked
 native replay runtime; see [tests/integration/README.md](tests/integration/README.md)
 and [VERIFICATION.md](VERIFICATION.md) for current Linux results and limits.
-Repository-only `docs/testing/` contains the semantic assessment and result record. Historical line anchors and E2E evidence
+Repository-only `docs/testing/` contains the semantic assessments and result records. Historical line anchors and E2E evidence
 above describe the earlier baseline; consult current source for exact locations.

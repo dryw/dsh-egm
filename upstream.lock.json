@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "google/elephant-goldfish-model",
   "branch": "main",
-  "commit": "464db031e7dd1b9a79803ac8ea45f55c7c20c5bc",
-  "updatedAt": "2026-11-03T14:13:57.266Z",
+  "commit": "113a3afc44e8f4f54722d7150d5701f65cc8ef7f",
+  "updatedAt": "2026-11-04T02:38:58.840Z",
   "files": [
     {
       "upstream": "skills/egm-bootstrap/SKILL.md",
@@ -33,12 +33,12 @@
     {
       "upstream": "skills/egm-review/SKILL.md",
       "adapted": "skills/egm-review/SKILL.md",
-      "sha256": "ae5f33afa170dfcf0b5365377df6064fd6c4490a2e8a618b8d5c8df8c1b27f21"
+      "sha256": "a172962167d174ae49d86833876d6a8508b77135c8e979b18e24d9dc04a67c1c"
     },
     {
       "upstream": "skills/egm-review-loop/SKILL.md",
       "adapted": "skills/egm-review-loop/SKILL.md",
-      "sha256": "9767b7d7f5c4723549dece84514e570f1cc448b62c13b5b2341bc6db85a40c51"
+      "sha256": "844b174055d32a7394f1096964a289987272109fff531a080fc9c3c9acef26fa"
     },
     {
       "upstream": "agents/bootstrap_orchestrator.md",
@@ -165,12 +165,12 @@
     {
       "upstream": "skills/egm-review/test_scenarios.yaml",
       "path": "test/fixtures/upstream-scenarios/egm-review.yaml",
-      "sha256": "fc9aa1b41345bcc63652304b5dd527fb79b6847651dcebca69c3ac11c37d891c"
+      "sha256": "6a3ec75ea36e81feb1cd5cdcde27451ac257530b1424d039d0e0671625ab7fea"
     },
     {
       "upstream": "skills/egm-review-loop/test_scenarios.yaml",
       "path": "test/fixtures/upstream-scenarios/egm-review-loop.yaml",
-      "sha256": "75c0a3811c3acb0084969f95b63806837f81c117873a05fc55c3b3327d5e36be"
+      "sha256": "6dfa8d74a74f1a65d195cca0787b801e78e061f6517d1400c80bf9ab989ec0b8"
     },
     {
       "upstream": "skills/egm-bootstrap/SKILL.md",
@@ -200,12 +200,12 @@
     {
       "upstream": "skills/egm-review/SKILL.md",
       "path": "test/fixtures/upstream-skills/egm-review/SKILL.md",
-      "sha256": "ae5f33afa170dfcf0b5365377df6064fd6c4490a2e8a618b8d5c8df8c1b27f21"
+      "sha256": "a172962167d174ae49d86833876d6a8508b77135c8e979b18e24d9dc04a67c1c"
     },
     {
       "upstream": "skills/egm-review-loop/SKILL.md",
       "path": "test/fixtures/upstream-skills/egm-review-loop/SKILL.md",
-      "sha256": "9767b7d7f5c4723549dece84514e570f1cc448b62c13b5b2341bc6db85a40c51"
+      "sha256": "844b174055d32a7394f1096964a289987272109fff531a080fc9c3c9acef26fa"
     },
     {
       "upstream": "docs/designs/review.md",

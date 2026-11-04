@@ -2,7 +2,7 @@
 
 Assessed before adaptation, 2026-11-03. Source: google/elephant-goldfish-model,
 `a119668d7dc5d558664ba711d4671d11fb7270a8` → `464db031e7dd1b9a79803ac8ea45f55c7c20c5bc`.
-Tracking: https://github.com/dryw/dsh-egm/issues/2 . Complete Git diff inspected
+Tracking: issue #2 (superseded by #3). Complete Git diff inspected
 for all eleven runtime files. 26 commits / 108 files; origin/main equals target
 at inspection. Scope remains the explicit target.
 

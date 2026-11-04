@@ -3,11 +3,11 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { loadBundledSkill } from '../skills-host.js'
-const target = '464db031e7dd1b9a79803ac8ea45f55c7c20c5bc'
+const target = '113a3afc44e8f4f54722d7150d5701f65cc8ef7f'
 const lock = JSON.parse(readFileSync(new URL('../upstream.lock.json',import.meta.url)))
 const text = path => readFileSync(new URL(`../${path}`,import.meta.url),'utf8').replaceAll('\r\n','\n')
 
-test('candidate is pinned to the assigned revision, including corpus metadata', () => {
+test('package is pinned to the assigned revision, including corpus metadata', () => {
   assert.equal(lock.commit,target)
   assert.equal(JSON.parse(text('test/fixtures/upstream-designs/corpus.json')).commit,target)
 })

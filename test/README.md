@@ -89,14 +89,14 @@ covered by equivalent checks here:
 | Read-hook tests (POSIX shell) | not applicable: the package installs no hooks |
 | Trace-based harness integration tests | [keyless Python/native replay checks](../tests/integration/README.md) cover actual reviewer isolation/read-only enforcement and the installed-plugin workflow; [historical manual probes](../E2E-VERIFICATION.md) remain separate live-model evidence |
 
-## Upstream 464db checks
+## Upstream pin checks
 
-`test/upstream-464db.test.js` pins the assigned revision, checks corpus provenance,
+`test/upstream-pin.test.js` pins the assigned revision (`113a3af`), checks corpus provenance,
 and compares all mapped artifacts with `git show <target>:<path>` when EGM_SOURCE
 is set. Instruction and severity checks are content contracts, not model behavior
 proof. Reviewer tests now cover setup failure, broken presets and invalid callers.
 
-`docs/testing/` is excluded from npm and contains the upstream semantic assessment
-and local candidate result record. The maintained [Python/native replay gate](../tests/integration/README.md)
+`docs/testing/` is excluded from npm and contains the upstream semantic assessments
+and local result records. The maintained [Python/native replay gate](../tests/integration/README.md)
 uses the public SDK and locked native replay runtime; see [VERIFICATION.md](../VERIFICATION.md)
 for the current Linux results and limits.

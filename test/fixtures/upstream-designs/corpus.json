@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "source": "google/elephant-goldfish-model",
-  "commit": "464db031e7dd1b9a79803ac8ea45f55c7c20c5bc",
+  "commit": "113a3afc44e8f4f54722d7150d5701f65cc8ef7f",
   "license": "Apache-2.0",
   "note": "Vendored verbatim from docs/designs/ as a future review-corpus fixture for the Goldfish review skills. These are EGM's own design documents, not feature specifications: the review protocol's semantic-split rule expects a specification to carry a '## Detailed Implementation Plan' H2 heading, and neither upstream document has that heading today (draft.md carries the step as '### Step 5: Detailed Implementation Plan'). The expectations below record which documents satisfy the rule so a change is visible when the fixtures are refreshed; the adapted review skill still states the rule.",
   "documents": [
