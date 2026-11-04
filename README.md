@@ -154,7 +154,15 @@ Google's upstream project supplies the EGM skills, reviewer personas, and design
 
 **What “read-only” does and doesn't mean:** it prevents Goldfish reviewers from using write, shell, and other disallowed tools in the supported Harness configuration. It doesn't mean reviewers are unable to see project files: they can read and search material available to their permitted tools. Don't treat the reviewer preset as a confidentiality boundary, and check what project material you expose to it.
 
-The integration is tested against the declared DSH version range; its isolation behavior depends on the Harness implementation of the tool restrictions and child-agent spawning APIs. The [verification guide](VERIFICATION.md) describes the enforcement layers, tests, and their limits. [ADAPTATIONS.md](ADAPTATIONS.md) explains what comes from Google and what this package adds.
+The package declares `>=0.2.1-rc.5 <0.3.0`; native replay evidence covers the pinned 0.2.1-rc.5 runtime on Linux, rather than every version in that range. Isolation behavior depends on the Harness implementation of tool restrictions and child-agent spawning APIs. The [verification guide](VERIFICATION.md) describes the enforcement layers, tests, and their limits. [ADAPTATIONS.md](ADAPTATIONS.md) explains what comes from Google and what this package adds.
+
+## Upstream tracking and adapter versions
+
+`dsh-egm` is independently versioned. It preserves EGM skills, personas, and standards from the exact Git revision in [upstream.lock.json](upstream.lock.json), with recorded content hashes. DSH behavior lives in the adapter layer; no canonical skill text is forked.
+
+We monitor upstream releases and material changes, prefer tagged revisions when practical, and may adopt a tested interim commit. Each update requires content checks and a documented runtime assessment; advancing the pin does not carry forward live acceptance. Adapter fixes and DSH compatibility changes follow this package's semantic versioning, independently of upstream EGM releases.
+
+[VERIFICATION.md](VERIFICATION.md) separates content checks, keyless replay, and historical live evidence. Published 0.2.4 live-model acceptance and Agent Team compatibility remain pending. Recognized upstream support is an EGM maintainer decision, tracked in [EGM #240](https://github.com/google/elephant-goldfish-model/issues/240). If unchanged 0.2.4 passes its exact-artifact acceptance, no new release is needed solely to record those results.
 
 ## Included skills
 
