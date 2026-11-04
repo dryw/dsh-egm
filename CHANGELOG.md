@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-11-04
 
 - Reviewer prompts now name the persona file with a `Persona:` path and the reviewer reads it
   itself, the documented approach for hosts without registered persona agents.
