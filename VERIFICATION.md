@@ -78,5 +78,11 @@ separately.
   (`missing Persona line`, fixed since by persona-by-path), skill delivery
   unverifiable (install directory not recorded), upstream artifacts fail with
   deviation `status-line-only`. This remains a failed acceptance attempt.
-- No paid run has used the current tests. [Historical results](E2E-VERIFICATION.md)
+- First paid run on these tests (2026-11-04, `deepseek-flash`, tarball from
+  `5f552aa`): install, both isolation tests, reviewers (15), required reads and
+  skill delivery pass. Stage order fails: stages 5 to 7 were dispatched together
+  and 8 to 9 before any report, so the preamble now states upstream's sequencing
+  rule. Upstream artifacts fail: the final design rewrote one relative link when
+  copied to `docs/designs/` (no listed deviation). Failed acceptance attempt.
+- No paid run has used the sequencing rule yet. [Historical results](E2E-VERIFICATION.md)
   do not establish acceptance of the current package.
