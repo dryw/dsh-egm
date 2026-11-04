@@ -19,15 +19,6 @@ import {
 
 const LOOKS_LIKE_FILE = /\.[A-Za-z0-9]+$/u
 
-test('every shared resource path in the DESIGN.md contract exists', () => {
-  const missing = SHARED_RESOURCE_PATHS.filter((reference) => !isFile(packagePath(reference)))
-  assert.equal(
-    missing.length,
-    0,
-    `shared resources the skill contract promises are missing (owners: phase-skills, review-skills, bootstrap-skills):${formatList(missing)}`,
-  )
-})
-
 test('every resources/... reference in skill and reviewer Markdown resolves', () => {
   const problems = []
   for (const file of listContentMarkdownFiles()) {

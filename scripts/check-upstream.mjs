@@ -74,29 +74,6 @@ export const ADAPTED_FILES = Object.freeze([
   ['skills/egm-bootstrap/references/templates.md', 'skills/egm-bootstrap/references/templates.md'],
   ['skills/egm-bootstrap/references/worker-return.schema.json', 'skills/egm-bootstrap/references/worker-return.schema.json'],
 ])
-/**
- * Upstream files vendored verbatim as test fixtures (same bytes as upstream).
- * @type {ReadonlyArray<readonly [string, string]>}
- */
-export const VENDORED_FIXTURES = Object.freeze([
-  ['skills/egm-bootstrap/test_scenarios.yaml', 'test/fixtures/upstream-scenarios/egm-bootstrap.yaml'],
-  ['skills/egm-brainstorm/test_scenarios.yaml', 'test/fixtures/upstream-scenarios/egm-brainstorm.yaml'],
-  ['skills/egm-draft/test_scenarios.yaml', 'test/fixtures/upstream-scenarios/egm-draft.yaml'],
-  ['skills/egm-drift-report/test_scenarios.yaml', 'test/fixtures/upstream-scenarios/egm-drift-report.yaml'],
-  ['skills/egm-resolve/test_scenarios.yaml', 'test/fixtures/upstream-scenarios/egm-resolve.yaml'],
-  ['skills/egm-review/test_scenarios.yaml', 'test/fixtures/upstream-scenarios/egm-review.yaml'],
-  ['skills/egm-review-loop/test_scenarios.yaml', 'test/fixtures/upstream-scenarios/egm-review-loop.yaml'],
-  ['skills/egm-bootstrap/SKILL.md', 'test/fixtures/upstream-skills/egm-bootstrap/SKILL.md'],
-  ['skills/egm-brainstorm/SKILL.md', 'test/fixtures/upstream-skills/egm-brainstorm/SKILL.md'],
-  ['skills/egm-draft/SKILL.md', 'test/fixtures/upstream-skills/egm-draft/SKILL.md'],
-  ['skills/egm-drift-report/SKILL.md', 'test/fixtures/upstream-skills/egm-drift-report/SKILL.md'],
-  ['skills/egm-resolve/SKILL.md', 'test/fixtures/upstream-skills/egm-resolve/SKILL.md'],
-  ['skills/egm-review/SKILL.md', 'test/fixtures/upstream-skills/egm-review/SKILL.md'],
-  ['skills/egm-review-loop/SKILL.md', 'test/fixtures/upstream-skills/egm-review-loop/SKILL.md'],
-  ['docs/designs/review.md', 'test/fixtures/upstream-designs/review.md'],
-  ['docs/designs/draft.md', 'test/fixtures/upstream-designs/draft.md'],
-])
-
 /** Normalised SHA-256 of a buffer or text. */
 export function sha256(value) {
   return createHash('sha256').update(value).digest('hex')
@@ -157,10 +134,6 @@ export async function buildLock({ repository, branch, commit, source, token }) {
   for (const [upstream, adapted] of ADAPTED_FILES) {
     files.push({ upstream, adapted, sha256: await upstreamHash(upstream, { repository, commit, source, token }) })
   }
-  const fixtures = []
-  for (const [upstream, vendoredPath] of VENDORED_FIXTURES) {
-    fixtures.push({ upstream, path: vendoredPath, sha256: await upstreamHash(upstream, { repository, commit, source, token }) })
-  }
   const lock = {
     schemaVersion: 1,
     repository,
@@ -168,7 +141,6 @@ export async function buildLock({ repository, branch, commit, source, token }) {
     commit,
     updatedAt: new Date().toISOString(),
     files,
-    fixtures,
   }
   return lock
 }
@@ -321,7 +293,7 @@ export function renderReport(result, { updateNote } = {}) {
     lines.push(`Compare: ${result.compareUrl}`)
   }
   lines.push('')
-  lines.push('Next steps: re-adapt the affected files for DeepSeek Harness, refresh the vendored fixtures,')
+  lines.push('Next steps: re-adapt the affected files for DeepSeek Harness,')
   lines.push('then run `node scripts/check-upstream.mjs --update-lock` and `node --test`.')
   return `${lines.join('\n')}\n`
 }
@@ -379,7 +351,7 @@ async function main(argv) {
     if (options.json) process.stdout.write(`${JSON.stringify({ ...result, result: 'lock-updated' }, null, 2)}\n`)
     else {
       process.stdout.write(
-        `updated ${LOCK_PATH}\n  commit:   ${commit}\n  files:    ${updated.files.length} adapted, ${updated.fixtures.length} vendored\n`,
+        `updated ${LOCK_PATH}\n  commit:   ${commit}\n  files:    ${updated.files.length} adapted\n`,
       )
     }
     return 0

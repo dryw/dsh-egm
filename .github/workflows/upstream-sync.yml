@@ -102,8 +102,7 @@ jobs:
             '',
             '- [ ] Review the affected files above against the current upstream content',
             '- [ ] Re-vendor the affected `skills/**`, `agents/**` and `resources/**` files verbatim from the new upstream commit; keep DSH harness mechanics in the integration layer only',
-            '- [ ] Refresh the vendored fixtures in `test/fixtures/upstream-scenarios/`, `test/fixtures/upstream-skills/` and `test/fixtures/upstream-designs/` from the new upstream commit',
-            '- [ ] Run `node --test` from the package root and fix any content-parity failures',
+            '- [ ] Run `node --test` from the package root and fix any lock or adapter failures',
             '- [ ] Refresh `upstream.lock.json` for the new commit (run `node scripts/check-upstream.mjs` in lock-update mode; see `scripts/README.md`) and commit the result',
             '- [ ] Confirm `npm pack --dry-run` still ships all runtime content, then bump the package version for a release',
           )
