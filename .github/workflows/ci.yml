@@ -1,7 +1,9 @@
 name: CI
 
-# Test on the systems users install this bundle on: Ubuntu and Windows, on the
-# Node majors in engines (22 and 24).
+# Test on the systems users install this bundle on: Ubuntu 24.04 and Windows
+# Server 2025, on the Node majors in engines (22 and 24). The runner images are
+# pinned rather than `-latest` so a GitHub image migration cannot silently change
+# the OS under the suite.
 on:
   push:
   pull_request:
@@ -17,11 +19,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             node: 22
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             node: 24
-          - os: windows-latest
+          - os: windows-2025
             node: 24
     steps:
       - name: Check out the package
@@ -124,7 +126,7 @@ jobs:
 
   integration:
     name: replay integration (Linux, Node 24, Python 3.12)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Check out the package
