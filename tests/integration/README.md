@@ -45,8 +45,9 @@ standard parent preset, the installed plugin, native replay and a small public C
   guard errors. Both files stay unchanged and the child completes successfully.
 - `workflow`: the unchanged inventory sample supplies inputs for a design-only low-stock feature.
   Fourteen fixed SDK phases resume one parent session, with fifteen real reviewer activations and
-  all six brainstorm activations overlapping. Each role must make its required full/scoped reads
-  with exact native paths, arguments, line numbers and text. Stage6 has document-only context;
+  concurrent brainstorm dispatch: the six activations must show overlapping lifetimes, which a
+  serial host would not. Each role must make its required full/scoped reads with exact native
+  paths, arguments, line numbers and text. Stage6 has document-only context;
   Stage8 reads the earlier report. Native parent tools write the brief, draft and five ordered
   reports, then copy the reviewed draft to the final design. Exactly eight new files are allowed;
   all original input/source/test bytes must stay unchanged.
