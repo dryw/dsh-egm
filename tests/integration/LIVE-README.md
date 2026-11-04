@@ -18,6 +18,11 @@ unset DEEPSEEK_API_KEY
 With `-s`, each run prints a timestamped line when a reviewer starts or finishes
 and when the parent writes or edits a file, so a long review shows its stage.
 
+Paid runs enable thinking with `reasoningEffort: high` (override with
+`DSH_EGM_REASONING=low|high|max`). Upstream's Codex test runs at medium reasoning;
+DeepSeek offers no medium, and high is its default when thinking is on.
+`identity.json` records the effort used.
+
 This runs the whole suite against the tarball, so install, isolation and
 workflow are separate outcomes. It spends API credit: 32,768 output tokens per
 response, a 20-minute SDK wait, no provider retries and no total cap. Keep native

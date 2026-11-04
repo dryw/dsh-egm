@@ -33,6 +33,9 @@ SKILLS = ("egm-brainstorm", "egm-draft", "egm-review")
 # Native user gestures activate user-only skills. The upstream prompt stays in
 # its own unchanged text block; this is the entire DSH-specific input addition.
 INVOCATIONS = "/egm-brainstorm /egm-draft /egm-review"
+# Upstream's Codex test runs with model_reasoning_effort="medium". DeepSeek offers
+# low, high and max; "high" is its default when thinking is enabled.
+REASONING = os.environ.get("DSH_EGM_REASONING", "high")
 # Upstream egm-review stages 5 to 9, in order, by the report each one writes.
 REPORTS = ("zoom_out_report.md", "comprehension_report.md", "critic_report.md",
            "intermediate_zoom_out_report.md", "implementation_readiness_report.md")
@@ -99,7 +102,7 @@ def installed_plugin(tmp_path_factory):
 def live_provider(model):
     return [{"id": "live-provider",
              "name": str(RUNTIME / "node_modules/@deepseek-ai/dsh-llm-deepseek-api-key/lib/index.js"),
-             "config": {"apiKeyEnv": "DEEPSEEK_API_KEY", "thinking": "disabled", "reasoningEffort": "off",
+             "config": {"apiKeyEnv": "DEEPSEEK_API_KEY", "thinking": "enabled", "reasoningEffort": REASONING,
                         "models": [{"id": model, "contextWindow": 1048576}],
                         "retryPolicy": {"mode": "normal", "maxRetries": 0}}}]
 
@@ -137,7 +140,7 @@ def write_identity(root, plugin, tarball, model, surface):
         "package_version": package["version"],
         "tarball_sha256": hashlib.sha256(Path(tarball).read_bytes()).hexdigest(),
         "source_sha": source, "dirty": dirty, "upstream_commit": lock["commit"],
-        "dsh_version": dsh["version"], "surface": surface, "model": model,
+        "dsh_version": dsh["version"], "surface": surface, "model": model, "reasoning_effort": REASONING,
         "date_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
     })
 
@@ -196,7 +199,7 @@ def run_dsh(installed, root, content, provider="deepseek-official", model=None, 
     try:
         with patch.dict(os.environ, env, clear=True):
             client.start()
-            client.initialize(cwd=str(workspace), provider=provider, model=model, reasoning_effort="off" if provider == "deepseek-official" else None, max_tokens=32768)
+            client.initialize(cwd=str(workspace), provider=provider, model=model, reasoning_effort=REASONING if provider == "deepseek-official" else None, max_tokens=32768)
             with client.subscribe_session_notifications(parent) as subscription:
                 client.session_prompt(parent, content, notification_subscription=subscription, on_notification=collect)
                 client.request("session/wait", {"sessionId": parent}, response_model=Empty,
