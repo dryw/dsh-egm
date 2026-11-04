@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="icon.svg?v=2" width="96" height="96" alt="dsh-egm 标志：大象的前半身与金鱼的尾巴，在分割处切开">
+  <img src="icon.svg?v=2" width="96" height="96" alt="dsh-egm 标识：大象的前半身与金鱼的尾巴，在分割处切开">
 </p>
 
-<h1 align="center">dsh-egm</h1>
+<h1 align="center">🐘 dsh-egm 🐟</h1>
 
 <p align="center"><a href="README.md">English</a> &ensp;·&ensp; 简体中文</p>
 
@@ -10,225 +10,234 @@
   <sub>本页为自动翻译，可能存在不准确之处；欢迎提交 PR 修正语法或含义。</sub>
 </p>
 
-<p align="center"><strong>用大象做设计，用金鱼做评审。</strong></p>
+<p align="center"><strong>用大象做设计。用金鱼做评审。</strong></p>
 
 <p align="center">
   <a href="#安装">安装</a> &ensp;·&ensp;
   <a href="#快速开始">快速开始</a> &ensp;·&ensp;
   <a href="#工作原理">工作原理</a> &ensp;·&ensp;
+  <a href="#本插件新增特性">插件特性</a> &ensp;·&ensp;
+  <a href="#包含的技能">技能</a> &ensp;·&ensp;
   <a href="#示例运行">示例运行</a> &ensp;·&ensp;
-  <a href="VERIFICATION.md">验证</a> &ensp;·&ensp;
-  <a href="CHANGELOG.md">更新日志</a> &ensp;·&ensp;
-  <a href="#许可证与署名">许可证</a>
+  <a href="#反馈与支持">反馈</a>
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="许可证：Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
   <a href="https://github.com/dryw/dsh-egm/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dryw/dsh-egm/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://dsh-plugin.org/plugins/dryw/dsh-egm"><img alt="已收录于 dsh-plugin.org" src="https://dsh-plugin.org/badges/listed.svg"></a>
   <a href="https://www.npmjs.com/package/dsh-egm"><img alt="npm: dsh-egm" src="https://img.shields.io/npm/v/dsh-egm"></a>
   <img alt="DeepSeek Harness 0.2.x" src="https://img.shields.io/badge/DSH-0.2.x-4c1.svg">
-  <img alt="node --test" src="https://img.shields.io/badge/gate-node%20--test-brightgreen.svg">
 </p>
 
-<p align="center">
-  <sub>Google 的 Elephant-Goldfish Model 的独立社区移植版。与 Google 无隶属关系，也未获其认可。</sub>
-</p>
+<p align="center"><sub>Google 的 Elephant-Goldfish Model，适配于 DeepSeek Harness。</sub></p>
 
-`dsh-egm` 以原生插件的形式，将 [Elephant-Goldfish Model](https://github.com/google/elephant-goldfish-model)（EGM）引入 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)。一个上下文丰富的 **Elephant** 会话会先向你提问，再起草设计文档；随后，使用全新上下文的只读 **Goldfish** 评审者会挑出其中的歧义、隐藏假设和实现缺口；**你**负责做出取舍，并在编写任何代码之前批准设计规格。
+## 认识大象 🐘
 
-当一项改动需要先做设计决策时，使用它；对于小而明确的缺陷修复，沿用你平常的编码流程。
+大象是你长期的设计搭档。
+
+它探索你的项目，阅读相关代码，提出问题，并帮助你评估各种备选方案。它会记录你做出的各项决定及其背后的原因。最终，你们共同输出一份设计文档。
+
+但大象存在一个致命问题：**它记住的太多了。**
+
+经过数小时的讨论，即使你没有明确写下来，它也能理解你的意图。如果你问大象这份设计是否合理，它可能会无意识地用之前对话中的背景知识来填补文档中的空白。
+
+这非常危险，因为后续负责实现该设计的开发者并不具备这些背景上下文。
+
+我们需要一个完全没有记忆的角色。
+
+## 认识金鱼 🐟
+
+金鱼每次都从零开始。
+
+它没有参与过你的设计讨论，不知道你为什么选择某种特定的架构，也不知道哪些需求你口头解释过却忘记写进文档。它只接收一份自包含的评审提示词、设计文档以及所需的参考材料。它可以读取和搜索被允许的项目文件，**但绝不会继承大象的对话历史**。
+
+随后，它尝试去理解你写下的内容。
+
+它能搞清楚系统应该如何工作吗？需求是否清晰无歧义？异常和失败情况是否得到妥善处理？各个接口是否能无缝拼合？最重要的是：**没有参与过最初讨论的人，能否仅凭文档正确构建出这个系统？**
+
+当金鱼发现问题时，大象会协助你解决问题。你修改文档，再次发起评审，直到你满意为止。
+
+最终产出的不仅是一份技术规格说明书，更是能够脱离原始对话、长久留存的项目知识资产。
+
+### 为什么要这么做？
+
+AI 编码助手存在三个常见的失败模式：
+
+1. **遗忘（Forget）：** 当对话被压缩或重启时，关键决策容易丢失。
+2. **假设（Assume）：** 助手会非常自信地去实现未经任何人真正同意的需求。
+3. **盲从（Agree）：** 助手在评审自己起草的设计时，会悄无声息地带入完全相同的未书面化假设。
+
+[Elephant-Goldfish Model](https://github.com/google/elephant-goldfish-model)（EGM）将上下文丰富的架构设计对话与独立、全新上下文的批评审查彻底分离。**`dsh-egm` 以原生插件的形式，将该工作流引入 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)。**
+
+当新功能、系统迁移或架构调整需要在编写代码前做出决策时，它能发挥巨大作用。而对于小巧、明确的缺陷修复，使用常规编码工作流即可。
+
+## 安装
+
+环境要求：
+
+- **DeepSeek Harness 0.2.x**，需符合包声明的版本范围 `>=0.2.1-rc.5 <0.3.0`。
+- **Node.js 22 或 24**（`>=22 <25`；CI 针对 Node 22 与 24 进行测试）。若使用 DSH 0.2.2 alpha 系列，其自身要求 Node 24.9 或更高版本。
+
+将插件安装到你的 Harness profile 中。示例使用 `web`；请替换为你实际使用的 profile：
+
+```bash
+dsh plugin --profile web add dsh-egm
+```
+
+重启 Harness，然后在 **设置 → 插件** 中确认插件已被启用。
+
+如果是本地开发，也可以直接从本地检出目录安装：
+
+```bash
+dsh plugin --profile web add /path/to/dsh-egm
+```
+
+## 快速开始
+
+将下方的每个斜杠命令复制并粘贴到 **Harness 聊天框**中。
+
+假设你要为应用添加 Webhook 投递功能。在编写代码之前，你需要回答以下问题：如果投递失败怎么办？如果同一个事件到达了两次怎么办？
+
+**1. 探索想法。**
+
+```text
+/egm-brainstorm Add webhook delivery to this application.
+```
+
+大象将帮助你探索需求、替代方案与权衡利弊。头脑风暴工作流会引入全新的评审者来挑战这一提案。你和大象共同确定方向，并将其记录在概念简报（concept brief）中。
+
+**2. 起草设计。**
+
+```text
+/egm-draft
+```
+
+大象将逐节制定规格说明，主动询问你的决策，而不是默默自行填补空白。默认情况下，它会将草稿保存为 DESIGN.md，存放在以功能命名的文件夹中（例如 docs/designs/webhook-delivery/DESIGN.md）。
+
+**3. 让金鱼入场。**
+
+```text
+/egm-review docs/designs/webhook-delivery/DESIGN.md
+```
+
+具备全新上下文的只读评审者将审查该设计，找出歧义、缺失的契约、失败边界情况以及实现风险。
+
+**4. 解决评审发现的问题。**
+
+```text
+/egm-resolve
+```
+
+决定哪些批评意见需要处理，修改设计，并根据需要发起再次评审。由你来决定规格说明书何时达到合格标准。
+
+**接下来，编写代码。** 或者更常见的是，让你的 AI 编码助手来编写——这一次，它对构建目标的理解要清晰得多。
+
+你也可以单独调用各个技能；并不强制要求执行完整顺序。
 
 ## 工作原理
 
 ![Elephant Goldfish 简化工作流](diagrams/workflow.svg)
 
-*大象记住上下文，金鱼从头开始。
-最后由你拍板。*
+*大象记住上下文。金鱼从头开始。最后由你掌控。*
 
-| 角色 | 上下文 | 职责 |
+大象推动项目对话持续前进。金鱼评审者在没有任何对话历史的前提下阅读已写成的规格说明。由人类决定接受、拒绝或深入调查哪些问题。
+
+结构化的 `/egm-review` 包含五个阶段：**初始视角拉远（Initial Zoom Out）**、**理解力测试（Comprehension）**、**设计批评（Design Critique）**、**中间视角拉远（Intermediate Zoom Out）** 以及 **实现就绪度（Implementation Readiness）**。不同的评审者从不同角度审查设计，其发现将成为待你解决的事项，而不是由 Agent 代替你做出决策。
+
+了解包含可选引导（bootstrap）步骤的完整协议，请参阅[详细协议流程图](diagrams/protocol.svg)。
+
+### 本插件新增特性
+
+Google 的上游项目提供了 EGM 的技能、评审者角色设定（personas）以及设计标准。本软件包则提供了在 DeepSeek Harness 中运行该工作流所需的集成支持：
+
+- **七项原生技能：** 在 Harness 中直接调用 `/egm-brainstorm`、`/egm-draft`、`/egm-review` 以及其他 EGM 命令。
+- **全新的评审者会话：** `egm_reviewer` 工具使用 `egm-reviewer` 预设和自包含提示词启动全新的子 Agent，不会派生或继承大象的会话历史记录。
+- **宿主强制执行的只读评审：** 评审者预设仅拥有文件读取和搜索工具，不具备文件写入、命令执行、会话读取、用户提问或任务委派工具。插件还会限制工具可见性，并通过评审允许列表进行防护。这是通过 Harness 工具系统强制执行的，而非仅凭文字要求 Model 遵守。
+- **可追溯的上游内容：** EGM 技能、角色设定和标准均从锁定的上游提交中原封不动地引入。Harness 专属的指令是在技能注册时动态注入的，而不是直接修改上游文件。
+
+**关于“只读”的含义与界限：** 它能防止金鱼评审者在受支持的 Harness 配置中使用写入、Shell 及其他被禁用的工具。但**这并不意味着评审者无法看到项目文件**：它们可以读取和搜索允许使用的工具所暴露的内容。请勿将评审者预设视为保密隔离边界，并请务必检查向其公开的项目内容。
+
+本集成针对声明的 DSH 版本范围进行了测试；其隔离行为取决于 Harness 对工具限制和子 Agent 派生 API 的具体实现。 [验证指南](VERIFICATION.md) 详细介绍了防护层、测试及其局限性。 [ADAPTATIONS.md](ADAPTATIONS.md) 解释了哪些内容源自 Google，哪些是本软件包新增的内容。
+
+## 包含的技能
+
+| 技能 | 调用方式 | 用途… |
 |---|---|---|
-| **Elephant** | 你的项目、需求以及此前的决策 | 探索问题、讨论取舍，并起草设计规格。 |
-| **Goldfish** | 文档及其引用的源材料，不含此前的对话 | 找出缺失的假设、不明确的需求和实现风险。 |
-| **你** | 真正重要的目标与约束 | 权衡取舍、批准设计，并决定要构建什么。 |
+| Brainstorm | `/egm-brainstorm` | 探索提案，挑战假设，并生成概念简报。 |
+| Draft | `/egm-draft` | 将简报或现有笔记转化为设计文档。 |
+| Review | `/egm-review` | 使用全新上下文的金鱼 Agent 分五个阶段评审设计。 |
+| Resolve | `/egm-resolve` | 归类发现的问题，并就设计修改达成一致。 |
+| Review loop | `/egm-review-loop` | 针对特定评审任务运行配置好的评审者组合。 |
+| Bootstrap | `/egm-bootstrap` | 为现有项目构建 README 与代码库上下文。 |
+| Drift report | `/egm-drift-report` | 将已签入的设计文档与当前源代码进行对比。 |
 
-上游的技能、角色设定和标准都是从锁定的上游提交中**逐字**内置的（见 [ADAPTATIONS.md](ADAPTATIONS.md)）；DeepSeek Harness 的机制则放在一个小型集成层里，宿主插件注册技能时会把这段说明插在技能正文前面。评审者通过插件的 `egm_reviewer` 工具启动，该工具会让它们在随包提供的只读 `egm-reviewer` agent 预设中运行：它们可以读取和搜索文件，但没有写入、编辑、命令、向用户提问、读取会话或委派工具。普通 `subagent` 会继承父会话的工具集，因此绝不用于评审；在同一上下文中进行的评审不算 Goldfish 评审。隔离由宿主强制执行，不靠角色设定中的文字；相关机制、测试和复现命令见 [VERIFICATION.md](VERIFICATION.md)。
+全部七项技能均由**用户手动调用**。插件不会自动启动高开销的设计或评审流程，也不会在设计完成评审后自动开始实现代码。
 
-## 要求
+### 文档保存在哪里？
 
-- `0.2.x` 系列中 `0.2.1-rc.5` 或更新版本的 DeepSeek Harness（`engines.dsh`）；已记录的端到端运行使用的是 `0.2.1-rc.5`。DSH 在评估该范围时会启用 SemVer 预发布匹配。
-- Node.js 22 或 24（已通过 CI 测试；`engines.node` 为 `>=22 <25`）。DSH `0.2.2` alpha 系列自行声明了 `node >=24.9` 的要求，因此运行该 DSH 系列时请使用 Node 24.9 及以上版本。
-- Linux、macOS 或 Windows。CI 在 Ubuntu 上以 Node 22 和 24 运行测试套件，在 Windows 上以 Node 24 运行。
-- 一个 Harness 组合，包含技能注册表、工具注册表、subagent 服务、agent 预设服务和进程内的 `spawn` subagent 提供方。插件会安装 `egm-reviewer` 预设以及选择该预设的 `egm_reviewer` 工具。
-
-## 安装
-
-安装到某个 profile 中——示例使用 `web`，请替换为你启动时使用的 profile：
-
-```sh
-# from npm: shortest install, and the form the DSH Plugin Hub lists
-dsh plugin --profile web add dsh-egm
-
-# from GitHub (before npm, or to pin a revision)
-dsh plugin --profile web add github:dryw/dsh-egm#<sha>
-
-# from a local checkout
-dsh plugin --profile web add /path/to/dsh-egm
-
-# from a packed tarball
-pnpm pack
-dsh plugin --profile web add ./dsh-egm-0.2.3.tgz
-```
-
-首次安装后重启 Harness，然后在**设置 → 插件**中查看插件条目和图标。
-
-## 快速开始
-
-挑一个需要做设计决策的功能，例如 webhook 投递：当一次投递失败，或者同一个事件到达两次时，应该发生什么？
-
-1. **探索想法** —— 输入 `/egm-brainstorm Add webhook delivery to this project.`，然后讨论需求与取舍。全新的评审者会质疑这个提案，达成一致的方向会保存为 `concepts_brief.md`。
-2. **起草设计规格** —— `/egm-draft` 会把简报变成 `docs/designs/` 下的一份逐节展开的设计文档，每写完一节就暂停，等待你在聊天中反馈。
-3. **评审草稿** —— `/egm-review docs/designs/webhook-delivery/DESIGN.md` 会依次运行五个 Goldfish 评审阶段，最后再进行一轮综合。用 `/egm-resolve` 选择要处理哪些发现。
-4. **人工评审，然后实现** —— 把设计送交人工评审，然后告诉 agent 按已批准的方案实现。
-
-你可以单独使用每项技能；不必遵循完整的顺序。
-
-## 示例运行
-
-仓库中的 [`examples/e2e-verification/`](https://github.com/dryw/dsh-egm/tree/main/examples/e2e-verification) 是对一个小型 fixture 项目的一次已记录运行：来自 `/egm-brainstorm` 的概念简报、来自 `/egm-draft` 的设计，以及来自 `/egm-review` 的全部五份 Goldfish 阶段报告，harness 环境和评审者激活 ID 记录在 [E2E-VERIFICATION.md](https://github.com/dryw/dsh-egm/blob/main/E2E-VERIFICATION.md) 中。它只存在于仓库中，不属于 npm tarball 的一部分。
-
-下面是该次运行中的一条阶段 5 发现，以及它在设计中促成的解决方案：
-
-> **重大 —— 缺少锁接口（设计 §Technical Plan、§Detailed Implementation Plan）。** sweep 需要 `Inventory` 的私有锁覆盖 snapshot → claim → emit 整个过程，但没有为跨模块的锁访问设计任何接口。inventory 应当对外提供加锁的 snapshot，或者提供一个供 sweep 使用的上下文管理器，而不是直接伸进 store 的锁里。
->
-> **修订后的设计中记录的解决方案：** 在 `Inventory` 上提供加锁的 snapshot 上下文管理器；契约以不变式和注入端口的形式表述；以 SQLite ledger 为权威来源，JSONL sink 明确为 best-effort。
->
-> —— [`examples/e2e-verification/reviews/zoom_out_report.md`](https://github.com/dryw/dsh-egm/blob/main/examples/e2e-verification/reviews/zoom_out_report.md)
-
-## 五阶段协议
-
-下图是完整的五阶段流程（包含可选的 bootstrap 步骤）。
-
-![详细的 Elephant-Goldfish 五阶段协议流程图](diagrams/protocol.svg)
-
-头脑风暴阶段会并行运行六位评审者，每位负责一个视角；正式设计评审则依次运行五个阶段。
-
-### 阶段
-
-- **可选步骤 —— 引导现有项目（`/egm-bootstrap`）。** 当现有代码库缺少文档时，Elephant 梳理代码库、生成 README/`EGM.md` 上下文，并请你验证生成的契约。
-- **阶段 1 —— 探索想法（`/egm-brainstorm`）。** Elephant 探索架构并质疑你的假设；你设定目标与约束。随后 Elephant 启动**六位独立、各自使用全新上下文的评审者**，每位对应一个头脑风暴视角：逆向思维 / YAGNI、成本 / 配额 / Token 经济学、UX / 开发者体验（ergonomics）、迁移 / 兼容性、可观测性 / SRE、技术债 / 可维护性。综合后的评审意见会保存为 `concepts_brief.md`。
-- **阶段 2 —— 撰写规格（`/egm-draft`）。** Elephant 将简报转化为 `design_draft.md`，并在你评审与决策的同时逐节迭代。
-- **阶段 3 —— 挑战设计（`/egm-review`）。** 不带父会话历史的全新评审者阅读设计、相关标准以及明确划定范围的源代码，然后依次执行五个阶段：Initial Zoom Out（视角拉远）、Comprehension（理解力测试）、Design Critique（设计批评）、Intermediate Zoom Out（中间视角拉远）和 Implementation Readiness（实现就绪度）。报告会被保存，发现会呈现给你。
-- **阶段 4 —— 解决与批准（`/egm-resolve`）。** 你逐条分类处理发现的问题，获批准的修订会被应用。该过程会反复迭代，直到设计被接受，期间可选择进行一次独立的复审。之后你批准最终规格。阶段 1-4 中不编写任何代码。
-- **阶段 5 —— 构建与验证。** 实现遵循已批准的设计；Elephant 实现、测试并汇报结果，你依据规格进行验证。
-
-### 产物
-
-| 产物 | 产生于 | 用途 |
-|---|---|---|
-| `concepts_brief.md` | 阶段 1 | 达成共识的问题陈述、备选方案以及带入起草阶段的决策。 |
-| `design_draft.md` | 阶段 2 | 逐节推进的工作规格。 |
-| `docs/designs/` 下的设计文档 | 阶段 2/4 末尾 | 实现所依据的已批准规格。 |
-| 各阶段评审报告 | 阶段 3/4 | 每个阶段的 Goldfish 发现。 |
-| `goldfish_review_report.md` | 阶段 4 | 解决过程中归类为“有争议 / 升级 / 建议修复 / 拒绝”的发现。 |
-
-## 技能
-
-| 技能 | 调用 | 用于… |
-|---|---|---|
-| 头脑风暴 | `/egm-brainstorm` | 检验一个想法，并写出概念简报。 |
-| 起草 | `/egm-draft` | 把简报或现有笔记变成设计文档。 |
-| 评审 | `/egm-review` | 用全新的只读 Goldfish agent 分五个阶段评审一份设计。 |
-| 评审循环 | `/egm-review-loop` | 针对特定的评审任务运行一组配置好的评审者。 |
-| 解决 | `/egm-resolve` | 逐条处理评审发现，并就修改达成一致。 |
-| 引导（bootstrap） | `/egm-bootstrap` | 为现有代码库创建或更新 README 和代码库上下文。 |
-| 漂移报告 | `/egm-drift-report` | 将签入的设计文档与当前源代码进行比较。 |
-
-全部七项技能都由用户调用，与上游 EGM 完全一致：agent 不会自行决定启动一次设计会话或一次开销很大的评审。输入 `/egm-…` 名称即可启动；上游指令会连同 DeepSeek Harness 集成说明一起注入那一轮对话。
-
-## 项目布局
-
-当设计产物存放在仓库中时，EGM 效果最好：
+EGM 使用普通的 Markdown 文件。典型项目的规范存储结构如下：
 
 ```text
-path/to/project
-├── .agents/skills/<project>-elephant/SKILL.md   # optional: project context loader
+my-project/
+├── AGENTS.md
 └── docs/
     └── designs/
-        ├── SITEMAP.md                          # index of design artifacts
-        └── <feature>/DESIGN.md                 # design specification
+        └── webhook-delivery/
+            └── DESIGN.md
 ```
 
-设计文档、概念简报和评审报告都是写入你工作目录的纯 Markdown 文件，因此可以像任何其他改动一样在 pull request 中评审。项目上下文技能由 DeepSeek Harness 从 `<repo>/.agents/skills/` 中发现。
-
-若要让 EGM 的工作产物不进入仓库根目录，同时设计仍位于 `docs/designs/`，请在项目的 `AGENTS.md` 中加入下面这一行，并把该文件夹加入 gitignore：
+产物的保存位置取决于具体技能和项目配置。若要将 EGM 的工作临时产物定向到独立目录，请在项目的 `AGENTS.md` 中添加以下内容：
 
 ```text
 EGM artifact directory: .dev/docs
 ```
 
-## 包布局
+你可以将该工作目录加入 `.gitignore`，同时将最终确定的设计文档纳入版本控制。这样在原始对话结束很久之后，各种决策、评审记录和实现计划依然清晰可查。
 
-```
-dsh-egm/
-├── index.js            # package entry; re-exports the integration layer
-├── skills-host.js      # DSH integration layer: registers skills + injects the preamble
-├── reviewer-host.js    # egm_reviewer tool: fresh child in the read-only preset
-├── reviewer-tools.js   # preset tool guard: read/search allowlist, deny everything else
-├── cordis.patch.yml    # bundle patch: host rows + the egm-reviewer agent preset
-├── VERIFICATION.md     # isolation tests, commands, evidence
-├── CHANGELOG.md        # release history
-├── ADAPTATIONS.md      # upstream/adapter split and provenance
-├── EGM.md              # agent-facing codebase blueprint
-├── upstream.lock.json  # pinned upstream commit + SHA-256 of every vendored file
-├── scripts/            # check-upstream.mjs: upstream drift check
-├── diagrams/           # D2 sources + rendered SVGs for both diagrams
-├── ADAPTER-NOTES.md    # adapter notes for direct SKILL.md reads
-├── E2E-VERIFICATION.md # recorded brainstorm -> draft -> review verification run
-├── examples/           # repository-only: the recorded end-to-end run
-├── skills/             # seven upstream SKILL.md files, verbatim
-├── agents/             # nine upstream reviewer/orchestrator personas, verbatim
-├── resources/          # upstream standards, execution instructions and README, verbatim
-├── locale/             # plugin display metadata (en, zh)
-└── icon.svg
-```
+## 示例运行
 
-适配器模块是这个包唯一新增的运行时代码。
+想看看评审者是否真的能发现有价值的问题？
 
-## 开发
+仓库中包含一份针对小型库存应用的[端到端完整记录示例](examples/e2e-verification/)。其中包含概念简报、设计文档以及全部五个阶段的评审报告。
 
-```sh
-node --test                            # unit and content suite: manifest, engines, vendored content, adapter, reviewer isolation, upstream parity, extra-file integrity
-node scripts/check-upstream.mjs        # reports whether upstream EGM moved since the pinned commit
-```
+在其中一次评审中，金鱼捕获了一个重要的接口缺失：拟议的库存清理（inventory sweep）需要锁来覆盖一连串的操作，但设计说明书中从未指定清理程序获取该锁的安全方式。修改后的设计引入了一个加锁的快照上下文管理器（locked snapshot context manager），而不是直接伸进库存存储的私有锁中。参见[问题发现与解决方案](examples/e2e-verification/reviews/zoom_out_report.md)。
 
-无需推理密钥的真实 Harness 集成测试使用独立、锁定版本的 Python/pytest 和 Node 测试环境，
-初始支持 Linux、Node 24 和 Python 3.12。它验证评审者实际输入的隔离、只读限制，以及脚本化的
-brainstorm → draft → review 流程。安装步骤和两个场景的选择命令见
-[`tests/integration/README.md`](tests/integration/README.md)。现有 JavaScript 单元与内容测试仍然
-无需安装依赖；集成测试依赖不会进入 npm 发布包。回放验证宿主行为，
-[已记录的手动运行](E2E-VERIFICATION.md) 则保留为独立的真实模型证据。
+详情请参阅 [E2E-VERIFICATION.md](E2E-VERIFICATION.md)。
 
-图示源文件位于 [`diagrams/`](diagrams/README.md)，编辑 `.d2` 后用 `node diagrams/render.mjs` 重新渲染。
+## 反馈与支持
 
-在编辑内置内容之后（仅当你重新适配新的上游提交时），用 `node scripts/check-upstream.mjs --update-lock` 更新锁定文件。安装插件后若要继续迭代，请重启 Harness（或切换插件条目），以便宿主插件重新读取随包文件。
+首次尝试使用 `dsh-egm`？无论运行成功与否，你的体验反馈都非常有价值。
 
-## 与上游保持同步
+- **安装失败或遇到 Bug？** [提交 Bug 报告](https://github.com/dryw/dsh-egm/issues/new?template=bug_report.yml)。请附上执行的命令、出现的异常行为，以及你的 DSH 和 Node 版本信息。
+- **有改进建议或文档想法？** [提交功能需求](https://github.com/dryw/dsh-egm/issues/new?template=feature_request.yml)。
+- **想分享首次使用体验或提问？** [新建 Issue](https://github.com/dryw/dsh-egm/issues/new/choose)。
 
-[`upstream.lock.json`](upstream.lock.json) 锁定上游提交（`464db031e7dd1b9a79803ac8ea45f55c7c20c5bc`）和每个内置文件的 SHA-256。
+我特别想了解插件是否安装顺畅、金鱼评审者是否如预期启动，以及它们的批评意见是否对你的设计产生了实质帮助。
 
-[`scripts/check-upstream.mjs`](scripts/check-upstream.mjs) 会把锁定的上游提交与上游的默认分支进行比较，并报告哪些内置文件发生了变化：
+**在分享日志或示例前：** 请务必抹去 API 密钥、凭据、个人信息以及敏感的项目内容。提供经过脱敏的小型复现示例比提供完整的私有对话记录更好。
 
-```sh
-node scripts/check-upstream.mjs                # clean = exit 0, drift = exit 1
-node scripts/check-upstream.mjs --json         # machine-readable drift report
-node scripts/check-upstream.mjs --update-lock  # after refreshing the vendored files
+## 供维护者与好奇者阅读
+
+- [VERIFICATION.md](VERIFICATION.md) — 评审者隔离、可复现测试、CI 和验证证据。
+- [E2E-VERIFICATION.md](E2E-VERIFICATION.md) — 记录的设计工作流。
+- [ADAPTATIONS.md](ADAPTATIONS.md) 与 [ADAPTER-NOTES.md](ADAPTER-NOTES.md) — 上游来源与 Harness 专属机制说明。
+- [CHANGELOG.md](CHANGELOG.md) — 版本变更历史。
+- [diagrams/](diagrams/README.md) — 工作流架构图及其源码。
+
+如需在检出目录中运行软件包检查：
+
+```bash
+node --test
+node scripts/check-upstream.mjs
 ```
 
-一个每日运行的 GitHub Actions 工作流（[`.github/workflows/upstream-sync.yml`](.github/workflows/upstream-sync.yml)）会运行该检查：发现漂移时新建或更新 re-vendor issue，检查本身出错时新建或更新第二个 issue 并附上捕获的输出。它只负责报告，由维护者手动重新引入上游内容。完整流程见 [`scripts/README.md`](scripts/README.md)。
+上游漂移检查仅进行变化报告。
 
 ## 许可证与署名
 
-本项目依据 Apache License, Version 2.0 授权。技能、评审者角色设定、标准和模板均随包内置，取自 [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model)，Copyright Google LLC，采用 Apache License, Version 2.0；参见 [NOTICE](NOTICE) 和 [ADAPTATIONS.md](ADAPTATIONS.md)。DeepSeek Harness 适配器、bundle 和评审者预设均为本包原创。
+本项目基于 [Apache License, Version 2.0](LICENSE) 开源。
 
-本项目不是 Google 官方支持的产品。
+技能、评审者角色设定、标准和模板均随包内置，源自 [google/elephant-goldfish-model](https://github.com/google/elephant-goldfish-model)，Copyright Google LLC，采用 Apache-2.0 授权；参见 [NOTICE](NOTICE) 与 [ADAPTATIONS.md](ADAPTATIONS.md)。DeepSeek Harness 适配器、插件包以及评审者预设均为本软件包的原创工作。
+
+`dsh-egm` 是一个独立的社区移植版本。它与 Google 无任何隶属关系，亦未获得 Google 的认可或官方支持。
