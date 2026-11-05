@@ -369,13 +369,11 @@ Upstream requires a real human approval pause. Use the same tarball.
      --tarball "$DSH_EGM_TARBALL" --source-sha "$DSH_EGM_SOURCE_SHA" --model "$DSH_EGM_MODEL"
    ```
 
-   It installs the tarball into a `tui` profile and prints the command that starts
-   the terminal UI with **two** `--patch` options: the run's `profile.patch.json`
-   (session logs, observer, model provider) and the installed package's opt-in
-   `adapters/dsh/agent-presets.patch.yml` prerequisite patch. Keep both; without
-   the second, the `tui` profile has no agent-preset registry or default and
-   `egm_reviewer` fails closed. Run the printed command with `DEEPSEEK_API_KEY`
-   exported.
+   It installs the tarball into DSH's shipped `web` profile and prints the command
+   that starts the browser UI with the run's `profile.patch.json` (session logs,
+   observer, model provider). `web` already composes the agent-preset registry, so
+   the opt-in `adapters/dsh/agent-presets.patch.yml` is not added. Run the printed
+   command with `DEEPSEEK_API_KEY` exported and open the URL it prints.
 2. Type `/egm-brainstorm`, then the feature paragraph and author line from
    `tests/integration/fixtures/dsh_line_count_prompt.txt`, without its approval
    paragraph. Answer every gate yourself.

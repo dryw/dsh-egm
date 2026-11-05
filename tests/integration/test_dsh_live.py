@@ -128,7 +128,7 @@ def write_json(path, value):
 def write_identity(root, plugin, tarball, model, surface):
     """Record the candidate before any inference so a failed run keeps it."""
     source = os.environ.get("DSH_EGM_SOURCE_SHA")
-    if TARBALL or surface == "tui":
+    if TARBALL or surface != "sdk-headless":
         assert source, "Set DSH_EGM_SOURCE_SHA to the commit the tarball was packed from"
         dirty = None
     else:
@@ -502,24 +502,25 @@ def test_brainstorm_draft_review(installed_plugin, tmp_path):
 
 
 def profile(directory, tarball, source, model):
-    """Prepare a terminal UI run with the same logs, observer and identity record."""
+    """Prepare an interactive run in DSH's shipped `web` profile, with the same logs,
+    observer and identity record. `web` already composes the agent-preset registry,
+    so the opt-in prerequisite patch is not added."""
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "workspace").mkdir(exist_ok=True)
     os.environ["DSH_EGM_SOURCE_SHA"] = source
-    home, plugin = install(directory, Path(tarball).resolve(strict=True), "tui")
+    home, plugin = install(directory, Path(tarball).resolve(strict=True), "web")
     patch_path = directory / "profile.patch.json"
     write_json(patch_path, profile_rows(directory, live_provider(model)))
     write_json(directory / "run.json", {"parent": None, "workspace": str(directory / "workspace"),
                                         "plugin": str(plugin), "dsh_home": str(home)})
-    write_identity(directory, plugin, tarball, model, "tui")
+    write_identity(directory, plugin, tarball, model, "web")
     print(f"cd {directory / 'workspace'} && EGM_TEST_RECORD={directory / 'records.jsonl'} DSH_HOME={home} "
-          f"{RUNTIME / 'node_modules/.bin/dsh'} tui --patch {patch_path} "
-          f"--patch {installed_agent_presets(plugin)}")
+          f"{RUNTIME / 'node_modules/.bin/dsh'} web --patch {patch_path}")
 
 
 def main(argv):
-    parser = argparse.ArgumentParser(description="Check retained evidence or prepare a terminal UI run.")
+    parser = argparse.ArgumentParser(description="Check retained evidence or prepare an interactive web run.")
     commands = parser.add_subparsers(dest="command", required=True)
     check = commands.add_parser("check")
     check.add_argument("evidence", type=Path)
