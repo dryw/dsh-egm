@@ -67,10 +67,12 @@ jobs:
           // Development-only trees and repository-only tooling must never be packed:
           // the suites, the historical examples and assessments, CI, private .dev
           // evidence, the D2 sources and their renderer, the manual upstream checker,
-          // and any temporary directory EGM map sidecar.
+          // the repository-only harness test record, and any temporary directory
+          // EGM map sidecar.
           const forbidden = [
             /^\.dev\//u,
             /^\.github\//u,
+            /^TESTING\.md$/u,
             /^tests\//u,
             /^test\//u,
             /^examples\//u,

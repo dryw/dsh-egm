@@ -14,7 +14,8 @@
 - Move the DSH host layer into `adapters/dsh/` with the export keys, plugin names and patch names
   unchanged; `package.json` stays at the package root.
 - Add [docs/dsh.md](docs/dsh.md) as the host guide and [TESTING.md](TESTING.md) as the requirement
-  map, commands, harness test record and limits.
+  map, commands, harness test record and limits. `TESTING.md` stays in the repository and is not
+  packaged, because it gains rows after a release is tested.
 - Check every packed vendored member against the lock's raw SHA-256 bytes, in addition to the
   LF-normalized content gate.
 

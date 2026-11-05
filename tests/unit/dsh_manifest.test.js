@@ -44,7 +44,6 @@ const REQUIRED_FILES = [
   'docs/assets/protocol.svg',
   'README.md',
   'README.zh-CN.md',
-  'TESTING.md',
   'docs/dsh.md',
   'upstream.lock.json',
   'LICENSE',
@@ -72,6 +71,7 @@ const FORBIDDEN_TREES = [
 
 /** Specific repository-only host tools and diagram sources that must stay unpacked. */
 const FORBIDDEN_FILES = [
+  'TESTING.md',
   'adapters/dsh/check_upstream.mjs',
   'adapters/dsh/render_diagrams.mjs',
   'docs/assets/README.md',

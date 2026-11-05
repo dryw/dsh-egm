@@ -15,7 +15,7 @@ from disk, next to the installed `skills/`, `agents/` and `resources/`.
 - For the story of the workflow and a tour of the package, read the README pair
   ([`README.md`](../README.md), [`README.zh-CN.md`](../README.zh-CN.md)).
 - For the requirement map, reproducible commands, the harness test record, the acceptance status
-  and the enforcement and evidence limits, read [TESTING.md](../TESTING.md).
+  and the enforcement and evidence limits, read [TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md).
 
 ## Install and invoke
 
@@ -123,7 +123,7 @@ egm_reviewer unavailable: the agent-presets service is not composed, so the read
 not compose the registry automatically, does not repair an existing registry whose default
 is missing or invalid, and does not claim bare-SDK or arbitrary-profile support unless you
 add the patch. Applying the file is a launcher step you perform; the [TESTING
-record](../TESTING.md) shows how the keyless runs load the same installed file.
+record](https://github.com/dryw/dsh-egm/blob/main/TESTING.md) shows how the keyless runs load the same installed file.
 
 ## Package layout and manifest mapping
 
@@ -176,9 +176,10 @@ checker and renderer.
 The packed set is enumerated explicitly in `package.json` `files`: the 26 vendored paths, the three
 host modules, both patch files (the active bundle patch and the opt-in prerequisites overlay), the
 icon, both locale dictionaries, the two diagram SVGs, the README pair, this guide,
-[TESTING.md](../TESTING.md), [CHANGELOG.md](../CHANGELOG.md), the lock and the legal files. The
-manual checker, the renderer, the D2 sources, the suites and every other repository-only path are
-rejected by the CI pack check if they leak into a tarball.
+[CHANGELOG.md](../CHANGELOG.md), the lock and the legal files. The harness test record,
+[TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md), stays in the repository because it gains rows after a release is tested.
+The manual checker, the renderer, the D2 sources, the suites and every other repository-only
+path are rejected by the CI pack check if they leak into a tarball.
 
 ## Path resolution: package root, skill-local, project
 
@@ -371,7 +372,7 @@ degrading. Exact messages for the common cases:
 
 Some stopping behavior is model behavior, not a host limit: for example, a skill that decides not to
 delegate because no delegation tool exists is following its instructions. Read the [TESTING
-record](../TESTING.md) for which refusals are covered by keyless checks.
+record](https://github.com/dryw/dsh-egm/blob/main/TESTING.md) for which refusals are covered by keyless checks.
 
 ## Scoped isolation limits (what "read-only" does and does not mean)
 
@@ -423,7 +424,7 @@ intentionally not shipped in this package: do not try to open them.
   license.
 - Upstream counts a harness as supported after `/egm-brainstorm`, `/egm-draft` and `/egm-review` run
   end to end through its plugin install with reviewer isolation recorded. The runs and the
-  acceptance status are in [TESTING.md](../TESTING.md). Recognized upstream support remains an EGM
+  acceptance status are in [TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md). Recognized upstream support remains an EGM
   maintainer decision.
 - Not shipped from upstream: its `docs/` integration guides, Python test harness, site, release
   tooling and marketplace manifests. Upstream's behavioural scenario suites are not vendored either:
@@ -443,12 +444,12 @@ DSH_EGM_LIVE=0 pytest tests/integration tests/unit/test_dsh_traces.py -q
 ```
 
 `npm test` runs the quoted `tests/unit/*.test.js` pattern. The keyless Python run needs the locked
-runtime; [TESTING.md](../TESTING.md) gives the setup, what each suite checks, and the paid and manual
+runtime; [TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md) gives the setup, what each suite checks, and the paid and manual
 runs, which need a model and are outside these free checks.
 
 The requirement map, the one-run-per-row harness test record (including failed and pending
 attempts), the enforcement and evidence limits, and the acceptance status live in
-[TESTING.md](../TESTING.md).
+[TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md).
 
 ## Glossary
 
@@ -474,8 +475,8 @@ attempts), the enforcement and evidence limits, and the acceptance status live i
 | **Stage** | One of the five review stages 5–9 (Initial Zoom Out, Comprehension, Design Critique, Intermediate Zoom Out, Implementation Readiness). |
 | **Direct dispatch** | Running a step in the current thread — here, writing the synthesis report — instead of through a child. |
 | **`GoldfishContext`** | The reading list of baseline documents a reviewer is told to read; not a permission grant. |
-| **Keyless check** | A free offline run with no model and no API key; [TESTING.md](../TESTING.md) records which checks are keyless and what they cover. |
-| **Native replay** | Running the pinned native DSH runtime against recorded or scripted model responses instead of a live model. The recorded native replay evidence covers the pinned 0.2.1-rc.5 Linux runtime; [TESTING.md](../TESTING.md) records the results. |
+| **Keyless check** | A free offline run with no model and no API key; [TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md) records which checks are keyless and what they cover. |
+| **Native replay** | Running the pinned native DSH runtime against recorded or scripted model responses instead of a live model. The recorded native replay evidence covers the pinned 0.2.1-rc.5 Linux runtime; [TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md) records the results. |
 | **Artifact directory** | Optional project setting (`EGM artifact directory: .dev/docs`) that redirects working artifacts. |
 | **Vendored snapshot** | The 26 upstream files shipped byte-identically at the commit pinned in `upstream.lock.json`. |
 
@@ -483,7 +484,7 @@ attempts), the enforcement and evidence limits, and the acceptance status live i
 
 - [`README.md`](../README.md) and [`README.zh-CN.md`](../README.zh-CN.md) — what the workflow is,
   quickstart and the recorded example lesson.
-- [TESTING.md](../TESTING.md) — requirement map, commands, harness test record, acceptance status
+- [TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md) — requirement map, commands, harness test record, acceptance status
   and limits.
 - [upstream.lock.json](../upstream.lock.json) — the pinned upstream commit, the exact vendored file
   list and each file's SHA-256.
