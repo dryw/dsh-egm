@@ -482,11 +482,11 @@ summarized in one row; their failures are named there.
 
 | Harness | Version | Date | Install | Brainstorm | Draft | Review | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| DeepSeek Harness (sdk-headless) | 0.2.1-rc.5 | 2026-11-04 | Pass | Pass | Pass | Pass | dsh-egm 0.3.0. Automated run on `candidate/1` (`96eed0f`, tarball SHA-256 `51dd2f40a0c0f3df9e8c2cc82e6b05d943b38820c6ef5b05ba7a0bec51e70d2c`), `deepseek-flash`, `reasoningEffort: high`. Install, both isolation tests and the missing-patch refusal passed in the full suite; that run's workflow test hit the old 20-minute wait at stage 9, and the workflow rerun on the same tarball passed every check: 15 reviewers, one turn each, no follow-up messages; stages sequential with no edits during a stage; required reads pass; final design byte-identical to the reviewed draft. The release tarball `candidate/2` (`323b4f7`, SHA-256 `e32de0855dd0ce41d6995db9891bcd8f315caba2da4d4fe86105d9f39d112f87`) has byte-identical runtime files (the 26 vendored files, adapter modules, both patches, locales, icon and lock); it differs only in `docs/dsh.md`, `CHANGELOG.md`, the `package.json` `files` list, and no longer packing `TESTING.md`. |
 | DeepSeek Harness (sdk-headless) | 0.2.1-rc.5 | 2026-11-04 | Pass | — | — | — | Development runs, not release evidence: seven paid runs with `deepseek-flash`, from the published 0.2.4 through candidate `1d208c2`. Isolation passed on every full run. The workflow failures they found are fixed and now checked: reviewers received abridged persona text (personas are now read by path); review stages ran in parallel (the preamble states upstream's sequencing rule); with reasoning off the parent stopped after brainstorm once and skipped the brainstorm reviewers once (paid runs use `reasoningEffort: high`); a reviewer was resumed and the draft was edited during a stage (both refused or checked). The last run, on `1d208c2`, passed every check with the final design byte-identical to the reviewed draft. The release candidate still needs its own rows. |
 
-Pending for the release candidate: one full paid run on the frozen tarball, and
-one manual interactive run with a real human approval pause. Both get their own
-rows here.
+Pending for the release: one manual interactive run on `candidate/2` with a real
+human approval pause, recorded as its own row.
 
 ## Free checks (not acceptance)
 
