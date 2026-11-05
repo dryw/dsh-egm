@@ -43,7 +43,7 @@ const REQUIRED_FILES = [
   'docs/assets/workflow.svg',
   'docs/assets/protocol.svg',
   'README.md',
-  'README.zh-CN.md',
+  'docs/README.zh-CN.md',
   'docs/dsh.md',
   'upstream.lock.json',
   'LICENSE',

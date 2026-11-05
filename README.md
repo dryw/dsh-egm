@@ -4,7 +4,7 @@
 
 <h1 align="center">🐘 dsh-egm 🐟</h1>
 
-<p align="center">English &ensp;·&ensp; <a href="README.zh-CN.md">简体中文</a></p>
+<p align="center">English &ensp;·&ensp; <a href="docs/README.zh-CN.md">简体中文</a></p>
 
 <p align="center"><strong>Design with an elephant. Review with a goldfish.</strong></p>
 

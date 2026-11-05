@@ -13,7 +13,7 @@ what the vendored snapshot consists of. It is shipped inside the package and is 
 from disk, next to the installed `skills/`, `agents/` and `resources/`.
 
 - For the story of the workflow and a tour of the package, read the README pair
-  ([`README.md`](../README.md), [`README.zh-CN.md`](../README.zh-CN.md)).
+  ([`README.md`](../README.md), [`docs/README.zh-CN.md`](README.zh-CN.md)).
 - For the requirement map, reproducible commands, the harness test record, the acceptance status
   and the enforcement and evidence limits, read [TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md).
 
@@ -482,7 +482,7 @@ attempts), the enforcement and evidence limits, and the acceptance status live i
 
 ## Related documents
 
-- [`README.md`](../README.md) and [`README.zh-CN.md`](../README.zh-CN.md) — what the workflow is,
+- [`README.md`](../README.md) and [`docs/README.zh-CN.md`](README.zh-CN.md) — what the workflow is,
   quickstart and the recorded example lesson.
 - [TESTING.md](https://github.com/dryw/dsh-egm/blob/main/TESTING.md) — requirement map, commands, harness test record, acceptance status
   and limits.

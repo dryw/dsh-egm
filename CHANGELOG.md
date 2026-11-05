@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 — 2026-11-05
+
+- Move the Chinese README to `docs/README.zh-CN.md`, so `README.md` is the only README at the
+  package root and npm shows it as the package readme. No runtime file changed.
+
 ## 0.3.0 — 2026-11-04
 
 - Reviewer prompts now name the persona file with a `Persona:` path and the reviewer reads it
