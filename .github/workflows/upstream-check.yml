@@ -8,8 +8,10 @@ name: Upstream check
 # A human still does the re-adaptation: this workflow only notices and reports.
 #
 # The checker exits 0 when upstream is unchanged, 1 on drift, and 2 on an
-# API/network error. Drift and errors both fail the job, so a scheduled run goes
-# red and GitHub notifies the owner; drift also prints the machine-readable report.
+# API/network error. Drift that touches a vendored file, and every error, fail
+# the job, so a scheduled run goes red and GitHub notifies the owner. Drift that
+# touches no vendored file (for example a new upstream design doc) only warns,
+# with the compare link in the run summary. Both print the machine-readable report.
 
 on:
   schedule:
@@ -49,9 +51,9 @@ jobs:
           script_status=$?
           set -e
           echo "script_exit=$script_status" >> "$GITHUB_OUTPUT"
-          if [ "$script_status" -eq 0 ] || [ "$script_status" -eq 1 ]; then
-            echo "status=$script_status" >> "$GITHUB_OUTPUT"
-          else
+          if [ "$script_status" -eq 0 ]; then
+            echo "status=0" >> "$GITHUB_OUTPUT"
+          elif [ "$script_status" -ne 1 ]; then
             # Normalise an unexpected crash or a missing Node to the script's
             # documented error code (2) so the failure step always fires.
             echo "status=2" >> "$GITHUB_OUTPUT"
@@ -62,9 +64,19 @@ jobs:
           if [ "$script_status" -eq 0 ]; then
             echo "Upstream unchanged since the pinned commit; nothing to do."
           elif [ "$script_status" -eq 1 ]; then
-            echo "::error::Upstream changed since the pinned commit; re-vendor and re-adapt the affected files."
             echo '--- machine-readable drift report (upstream-report.json) ---'
             cat upstream-report.json
+            # Fail only when a vendored file changed. A behind or truncated
+            # comparison can't prove that none did, so it fails too.
+            if node -e 'const r = require("./upstream-report.json"); process.exit(r.affected.length === 0 && !r.compareLimited && !r.targetBehind ? 0 : 1)'; then
+              echo "status=0" >> "$GITHUB_OUTPUT"
+              url=$(node -p 'require("./upstream-report.json").compareUrl')
+              echo "::warning::Upstream moved, but no vendored file changed; the pin can stay. $url"
+              echo "Upstream moved without touching a vendored file: $url" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "status=1" >> "$GITHUB_OUTPUT"
+              echo "::error::Upstream changed a vendored file since the pinned commit; re-vendor and re-adapt the affected files."
+            fi
           fi
 
       - name: Fail the job on drift or a check error
