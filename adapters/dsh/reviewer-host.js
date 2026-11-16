@@ -54,7 +54,9 @@ function reviewerSupportError(ctx) {
   if (ctx.get('agentPresets') === undefined) {
     return 'the agent-presets service is not composed, so the read-only egm-reviewer preset cannot be selected'
   }
-  if (!ctx.subagents.list().includes('spawn')) {
+  // DSH 0.2.2 exposes getProvider(), not the removed subagents.list().
+  // Fail closed if the provider or provider lookup is unavailable.
+  if (ctx.subagents.getProvider?.('spawn') === undefined) {
     return 'no in-process "spawn" subagent provider is composed'
   }
   return undefined
