@@ -113,16 +113,22 @@ export function apply(ctx) {
       if (typeof args.prompt !== 'string' || args.prompt.trim() === '') {
         throw new Error('egm_reviewer requires a non-empty prompt')
       }
+      const request = {
+        prompt: [{ type: 'text', text: args.prompt }],
+        parent,
+        agentPreset: REVIEWER_PRESET,
+        // Depth 1 admits this child and forbids it from delegating further.
+        maxDepth: 1,
+      }
+      // DSH 0.2.1-rc.5 expects { request }; 0.2.2-rc.3 accepts the
+      // activation fields directly and has removed the legacy list() API.
+      // Select the matching shape before dispatch rather than retrying a
+      // possibly side-effecting activation on error.
+      const activationInput = typeof ctx.subagents.list === 'function' ? { request } : request
       const activation = await ctx.subagents.startActivation({
         provider: 'spawn',
         label: typeof args.description === 'string' && args.description.trim() !== '' ? args.description : 'EGM Goldfish reviewer',
-        request: {
-          prompt: [{ type: 'text', text: args.prompt }],
-          parent,
-          agentPreset: REVIEWER_PRESET,
-          // Depth 1 admits this child and forbids it from delegating further.
-          maxDepth: 1,
-        },
+        ...activationInput,
         signal: exec.signal,
         delivery: 'parent',
       })
