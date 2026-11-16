@@ -106,6 +106,58 @@ jobs:
           console.log(`package contents OK: ${files.size} files, ${shipped.length} declared`)
           NODE
 
+  integration-rc3:
+    name: reviewer activation (DSH 0.2.2-rc.3, Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out the package
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Install DSH 0.2.2-rc.3 test runtime
+        run: |
+          npm ci --prefix tests/integration/dsh-ci
+          npm install --prefix tests/integration/dsh-ci --no-save --package-lock=false \
+            @deepseek-ai/dsh@0.2.2-rc.3 \
+            @deepseek-ai/dsh-llm-replay@0.2.2-rc.3 \
+            @deepseek-ai/dsh-agent-preset-registry@0.2.2-rc.3 \
+            @deepseek-ai/dsh-agent-preset@0.2.2-rc.3
+          node -e "const p=require('./tests/integration/dsh-ci/node_modules/@deepseek-ai/dsh/package.json'); if(p.version!=='0.2.2-rc.3') process.exit(1); console.log('Testing DSH',p.version)"
+
+      - name: Install Python test dependencies
+        run: |
+          python -m venv "$RUNNER_TEMP/egm-venv"
+          "$RUNNER_TEMP/egm-venv/bin/python" -m pip install -r tests/integration/dsh_requirements.txt
+
+      - name: Start a real Goldfish reviewer using keyless replay
+        env:
+          DSH_EGM_LIVE: '0'
+        run: |
+          "$RUNNER_TEMP/egm-venv/bin/python" -m pytest \
+            tests/integration/test_dsh.py::test_adapter \
+            tests/integration/test_dsh.py::test_missing_agent_presets \
+            -q -s --basetemp "$RUNNER_TEMP/egm-rc3"
+
+      - name: Retain failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: egm-rc3-failure
+          path: ${{ runner.temp }}/egm-rc3
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
   integration:
     name: replay integration (Linux, Node 24, Python 3.12)
     runs-on: ubuntu-24.04
