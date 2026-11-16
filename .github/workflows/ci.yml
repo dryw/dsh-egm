@@ -158,6 +158,53 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+
+  candidate-issue-6:
+    name: Pack unpublished issue 6 desktop candidate
+    if: github.ref == 'refs/heads/fix/issue-6-subagent-provider-lookup'
+    needs: [test, integration, integration-rc3]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out tested commit
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+
+      - name: Pack 0.3.2-rc.1 without publishing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p candidate
+          npm pkg set version=0.3.2-rc.1
+          npm pack --pack-destination candidate
+          tar -xOzf candidate/dsh-egm-0.3.2-rc.1.tgz package/package.json | node -e "let j=JSON.parse(require('node:fs').readFileSync(0,'utf8')); if(j.name!=='dsh-egm'||j.version!=='0.3.2-rc.1') process.exit(1)"
+          tar -xOzf candidate/dsh-egm-0.3.2-rc.1.tgz package/adapters/dsh/reviewer-host.js | grep -q "getProvider"
+          (cd candidate && sha256sum dsh-egm-0.3.2-rc.1.tgz > SHA256SUMS.txt)
+          printf '%s\n' "$GITHUB_SHA" > candidate/SOURCE_COMMIT.txt
+          cat > candidate/README.txt <<'EOF'
+          Issue #6 Desktop test candidate: dsh-egm 0.3.2-rc.1
+          This package is UNPUBLISHED and must be installed from the local .tgz.
+          It was built only after unit tests and DSH 0.2.1-rc.5 / 0.2.2-rc.3
+          integration checks passed. SOURCE_COMMIT.txt identifies the source.
+          Verify the tarball with SHA256SUMS.txt before installation.
+          The Desktop application must use its bundled CLI to change its profile.
+          Restart Desktop after installation. To restore the published build,
+          remove the candidate and install dsh-egm@0.3.1 again.
+          Do not share unredacted logs, keys, or confidential design documents.
+          EOF
+          cat candidate/SHA256SUMS.txt
+
+      - name: Upload installable package and checksum
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: dsh-egm-0.3.2-rc.1-issue-6
+          path: candidate/
+          if-no-files-found: error
+          retention-days: 90
+
   integration:
     name: replay integration (Linux, Node 24, Python 3.12)
     runs-on: ubuntu-24.04
