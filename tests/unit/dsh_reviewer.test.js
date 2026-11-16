@@ -49,6 +49,7 @@ function createReviewerContext(options = {}) {
           return (options.providers ?? ['spawn']).includes(name) ? { name } : undefined
         },
       }),
+      ...(options.legacyActivation ? { list: () => options.providers ?? ['spawn'] } : {}),
       async startActivation(spec) {
         activations.push(spec)
         return { childId: 'child-reviewer-1', messageId: 'message-1', result: Promise.resolve({}), dispose: async () => {} }
@@ -88,19 +89,36 @@ test('the reviewer plugin registers the egm_reviewer tool and starts preset chil
   const spec = activations[0]
   assert.equal(spec.provider, 'spawn')
   assert.equal(spec.delivery, 'parent')
-  assert.equal(spec.request.agentPreset, 'egm-reviewer', 'the child must mount the read-only preset')
-  assert.equal(spec.request.maxDepth, 1, 'a reviewer must not be able to delegate further')
-  assert.deepEqual(spec.request.prompt, [{ type: 'text', text: 'You are a naive reader.' }])
-  assert.deepEqual(spec.request.parent, { id: 'parent-1' })
+  assert.equal(spec.agentPreset, 'egm-reviewer', 'the child must mount the read-only preset')
+  assert.equal(spec.maxDepth, 1, 'a reviewer must not be able to delegate further')
+  assert.deepEqual(spec.prompt, [{ type: 'text', text: 'You are a naive reader.' }])
+  assert.deepEqual(spec.parent, { id: 'parent-1' })
+  assert.equal(spec.request, undefined, 'modern DSH must receive flattened activation fields')
   const empty = createReviewerContext()
   reviewer.apply(empty.context)
   const prompt = 'Mode: REVIEW\nTargetFile: /fixture/design.md\nGoldfishContext: []'
   await empty.registeredTools[0].execute({description:'empty context',prompt}, {
     agent:{id:'private-parent', history:['PARENT_SENTINEL']}, signal:new AbortController().signal,
   })
-  assert.deepEqual(empty.activations[0].request.prompt, [{type:'text',text:prompt}])
-  assert(!JSON.stringify(empty.activations[0].request.prompt).includes('PARENT_SENTINEL'))
+  assert.deepEqual(empty.activations[0].prompt, [{type:'text',text:prompt}])
+  assert(!JSON.stringify(empty.activations[0].prompt).includes('PARENT_SENTINEL'))
 
+})
+
+test('legacy DSH activation receives its request envelope', async () => {
+  const { context, registeredTools, activations } = createReviewerContext({ legacyActivation: true })
+  reviewer.apply(context)
+  const result = await registeredTools[0].execute(
+    { description: 'legacy reviewer', prompt: 'Read design.md.' },
+    { agent: { id: 'legacy-parent' }, signal: new AbortController().signal },
+  )
+  assert.deepEqual(result, { kind: 'activation', subagentId: 'child-reviewer-1' })
+  assert.equal(activations.length, 1)
+  assert.equal(activations[0].parent, undefined)
+  assert.equal(activations[0].request.agentPreset, 'egm-reviewer')
+  assert.equal(activations[0].request.maxDepth, 1)
+  assert.deepEqual(activations[0].request.parent, { id: 'legacy-parent' })
+  assert.deepEqual(activations[0].request.prompt, [{ type: 'text', text: 'Read design.md.' }])
 })
 
 test('a started reviewer cannot be messaged or resumed', async () => {
