@@ -44,9 +44,11 @@ function createReviewerContext(options = {}) {
       return undefined
     },
     subagents: {
-      list() {
-        return options.providers ?? ['spawn']
-      },
+      ...(options.withoutProviderLookup ? {} : {
+        getProvider(name) {
+          return (options.providers ?? ['spawn']).includes(name) ? { name } : undefined
+        },
+      }),
       async startActivation(spec) {
         activations.push(spec)
         return { childId: 'child-reviewer-1', messageId: 'message-1', result: Promise.resolve({}), dispose: async () => {} }
@@ -72,6 +74,7 @@ test('the reviewer plugin registers the egm_reviewer tool and starts preset chil
   assert.equal(registeredTools.length, 1, 'one reviewer tool must be registered')
   const tool = registeredTools[0]
   assert.equal(tool.name, 'egm_reviewer')
+  assert.equal(context.subagents.list, undefined, 'current DSH exposes getProvider(), not list()')
   assert.match(tool.description, /read-only/iu)
   assert.match(tool.description, /Name the persona file and every input path/u)
   assert.match(tool.parameters.properties.prompt.description, /including `Persona: <absolute path>`/u)
@@ -115,6 +118,7 @@ test('the reviewer tool fails closed when reviewer support is missing', async ()
   const cases = [
     { options: { withoutPresets: true }, pattern: /agent-presets service/iu },
     { options: { providers: [] }, pattern: /spawn/iu },
+    { options: { withoutProviderLookup: true }, pattern: /spawn/iu },
     { options: { presets: [{ id: 'standard' }] }, pattern: /not installed/iu },
     { options: { presets: [{ id: 'egm-reviewer', broken: 'missing guard module' }] }, pattern: /preset is broken/iu },
   ]
